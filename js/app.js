@@ -1422,6 +1422,20 @@ function isSingleHerbItem(item) {
   return false;
 }
 
+// 最上部ヘッダーの「比較」ボタンおよび「ブックマーク」切り替えボタンの表示・非表示制御
+function setHeaderActionButtonsVisible(visible) {
+  const compareBtn = document.getElementById('compareModeBtn');
+  const bookmarkBtn = document.getElementById('bookmarkCycleBtn');
+  if (compareBtn) {
+    if (visible) compareBtn.classList.remove('hidden');
+    else compareBtn.classList.add('hidden');
+  }
+  if (bookmarkBtn) {
+    if (visible) bookmarkBtn.classList.remove('hidden');
+    else bookmarkBtn.classList.add('hidden');
+  }
+}
+
 // 直接アイテムを指定して商品詳細専用ページを開く（独立ページ切り替え ＆ スクロール位置記録）
 function openDetailPage(item, updateHash = true) {
   if (!item) return;
@@ -1444,6 +1458,9 @@ function openDetailPage(item, updateHash = true) {
   if (mainView) mainView.classList.add('hidden');
   if (compareView) compareView.classList.add('hidden');
   if (detailView) detailView.classList.remove('hidden');
+
+  // 詳細画面では比較ボタンとブックマーク切り替えボタンを非表示
+  setHeaderActionButtonsVisible(false);
 
   const globalIdx = typeof item._globalIndex === 'number' ? item._globalIndex : STATE.items.indexOf(item);
   if (updateHash) {
@@ -1706,6 +1723,9 @@ function navigateToSearch(updateHash = true) {
   if (mainView) mainView.classList.remove('hidden');
   if (compareView) compareView.classList.add('hidden');
   if (detailView) detailView.classList.add('hidden');
+
+  // 検索一覧では比較ボタンとブックマーク切り替えボタンを再表示
+  setHeaderActionButtonsVisible(true);
   
   if (updateHash) {
     history.pushState(null, '', '#/');
@@ -1735,6 +1755,9 @@ function openCustomComparePage(selectedItems, updateHash = true) {
   if (mainView) mainView.classList.add('hidden');
   if (compareView) compareView.classList.remove('hidden');
 
+  // 比較画面では比較ボタンとブックマーク切り替えボタンを非表示
+  setHeaderActionButtonsVisible(false);
+
   if (updateHash) {
     history.pushState(null, '', `#/compare?custom=1`);
   }
@@ -1761,6 +1784,9 @@ function openComparePage(encodedFormula, updateHash = true) {
   if (mainView) mainView.classList.add('hidden');
   if (compareView) compareView.classList.remove('hidden');
   
+  // 比較画面では比較ボタンとブックマーク切り替えボタンを非表示
+  setHeaderActionButtonsVisible(false);
+
   if (updateHash) {
     history.pushState(null, '', `#/compare?formula=${encodeURIComponent(formula)}`);
   }
