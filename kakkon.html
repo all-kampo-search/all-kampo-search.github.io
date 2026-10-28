@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>医療用医薬品 : 葛根湯 (コタロー葛根湯エキス細粒)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="漢方製剤; 総称名:葛根湯; 一般名:葛根湯; 販売名:コタロー葛根湯エキス細粒; 製造会社:小太郎漢方製薬" />
+<script type="text/javascript" src="/js/jquery-3.5.1.min.js"></script>
+<script>
+function Cookie () {
+	this.__init()
+}
+
+Cookie.prototype.__init = function () {
+	const self = this
+	self.__cookie = {};
+
+	// "key1=value1; key2=value2" -> ["key1=value1", "key2=value2"]
+	document.cookie.split(';').forEach(function (keyValue) {
+		// "key1=value1" -> ["key1", "value1"]
+		let c = keyValue.trim().split('=')
+		if (c.length === 2) {
+			self.__cookie[c[0]] = decodeURIComponent(c[1]);
+		}
+	})
+}
+
+Cookie.prototype.__flush = function (key, value) {
+	let cookie = key + '=' + encodeURIComponent(value)
+	document.cookie = cookie;
+}
+
+Cookie.prototype.getValue = function (key) {
+	return this.__cookie[key]
+}
+
+Cookie.prototype.setValue = function (key, value) {
+	this.__cookie[key] = value
+	this.__flush(key, value);
+}
+
+
+
+//
+// PopupDictionaryのコンストラクタ
+//
+// 引数
+//   target : ポップアップ対象のセレクタ
+//
+var PopupDictionaryIndex = 1;
+function PopupDictionary(selector, option) {
+  var self = this;
+
+  self._id = "pop-dic-" + PopupDictionaryIndex++;
+  self._titleWidth  = 270;
+  self._iframeWidth  = 400;
+  self._iframeHeight = 200;
+  self._popupVerticalSpace = 15;
+  self._popupHorizonSpace = 30;
+  self._previewUrl = "/kegg-bin/html2image?scale=0.98&url=";
+  self._showOriginalUrl = false;
+  self._showDescriptionLink = true;
+  self._allowScroll = false;
+  self._popupStandbyTime = 1000;
+  self._template = 
+             '<div id="' + self._id + '" class="pop-dic">' +
+             '<div class="header">' +
+             '<div class="title">' +
+             '<span></span>' +
+             '</div>' +
+             '<div class="link">' +
+             '<a>&gt;&gt;詳細をみる</a>' +
+             '</div>' +
+             '<div class="buttons">' +
+             '<a href="javascript:close()" class="close"><canvas></canvas></a>' +
+             '</div>' +
+             '</div>' +
+             '<div class="separator"></div>' +
+             '<div class="waiting"><img src="data:image/gif;base64,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" data-src="/Fig/waiting-circle-small.gif" border="0"></div>' +
+             '<iframe></iframe>' +
+             '<div class="content"></div>' +
+             '</div>';
+  self._selector = selector;
+  self._dragged = false;
+  self._url = function(tag) {
+    // DOMを通すと絶対URLを取得できる。
+    var url = tag.get(0).href;
+    return url;
+  };
+
+  if(option != null) {
+    if(option.showOriginalUrl != null) {
+      self._showOriginalUrl = option.showOriginalUrl;
+    }
+    if(option.showDescriptionLink != null) {
+      self._showDescriptionLink = option.showDescriptionLink;
+    }
+    if(option.allowScroll != null) {
+      self._allowScroll = option.allowScroll;
+    }
+    if(option.title != null) {
+      self._title = option.title;
+    }
+    if(option.titleWidth != null) {
+      self._titleWidth = option.titleWidth;
+    }
+    if(option.content != null) {
+      self._content = option.content;
+    }
+    if(option.url != null) {
+      self._url = option.url;
+    }
+    if(option.popupStandbyTime != null) {
+      self._popupStandbyTime = option.popupStandbyTime;
+    }
+    if(option.iframeWidth != null) {
+      self._iframeWidth = option.iframeWidth;
+    }
+    if(option.iframeHeight != null) {
+      self._iframeHeight = option.iframeHeight;
+    }
+  }
+
+  self._init();
+}
+
+PopupDictionary.prototype._init = function() {
+  var self = this;
+
+  // ポップアップ要素の作成
+	var popup = $(this._template);
+  popup.hide();
+
+  popup
+	.css({
+    position : "absolute",
+    border   : "solid 1px #777777",
+    "border-radius" : "8px 8px",
+    margin   : "0px",
+    padding  : "10px",
+    background : "white",
+  })
+	.on('click', function(e){
+    // clickイベントの親要素への伝播を停止する。
+    // (ポップアップ自身をclickしても閉じないようにする。)
+    e.stopPropagation();
+  })
+
+  popup.find(".header").css({
+    margin : "0px",
+    padding : "0px"
+  });
+
+  popup.find(".title").css({
+    float : "left",
+    "max-width" : self._titleWidth + "px"
+  });
+
+  popup.find(".title span").css({
+    "font-size" : "1.0em"
+  });
+
+  popup.find(".link").css({
+    float : "left"
+  });
+
+  popup.find(".link a").css({
+    "margin-left" : "10px",
+    "font-size"   : "0.9em"
+  });
+
+  popup.find(".buttons").css({
+    float : "right"
+  });
+
+  popup.find(".buttons a.close").click(function() {
+    self.hide();
+    return false;
+  });
+
+  popup.find(".buttons canvas").closeButton();
+
+  popup.find(".separator").css({
+    clear : "both",
+    height: "10px"
+  });
+
+  popup.find(".waiting").css({
+    width  : self._iframeWidth + "px"
+  });
+
+	var scrolling = (self._allowScroll) ? "auto" : "no";
+
+  popup
+	.on('pointermove', function (e) {
+		const oe = e.originalEvent
+
+		// 右クリック & ポインタ移動 == ウィンドウの移動
+		if (oe.buttons === 1) {
+			this.style.left     = this.offsetLeft + oe.movementX + 'px';
+			this.style.top      = this.offsetTop  + oe.movementY + 'px';
+			this.style.position = 'absolute';
+			this.draggable      = false;
+			this.setPointerCapture(oe.pointerId);
+
+		  self._dragged = true;
+
+			// ドラッグ中にウィンドウの下にあるテキストを選択しないように、
+			// テキストの選択を禁止する。
+			self._userSelectOff();
+		}
+	})
+	// ポインタが popup ウィンドウの外に出た場合。
+	// pointerout イベントは popup ウィンドウ内の他のタグに
+	// 移動した時も発生するので使えない。
+	.on('pointerleave', function () {
+		self._userSelectOn();
+	})
+	.find("iframe")
+  .attr("scrolling", scrolling)
+  .css({
+    border : "solid 1px #cccccc",
+    width  : self._iframeWidth + "px",
+    height : self._iframeHeight + "px",
+    display : "none",
+  })
+  .on('load', function() {
+    // iframe内のロードが完了したら、
+    // Aタグのクリックを禁止する。
+    //$(this).contents()
+    //       .find("a")
+    //       .click(function(){ return false;});
+
+    // iframeを表示
+    $(this).show();
+
+    // 読み込み画像を非表示
+    popup.find(".waiting").hide();
+
+  });
+
+  if(!self._showDescriptionLink) {
+    popup.find(".link").hide();
+  }
+
+  $("body")
+	.append(popup)
+	.click(function() {
+    // ブラウザクリック時にポップアップを閉じる。
+    self.hide();
+  });
+
+  this._popup = popup;
+
+  $(self._selector)
+	.mouseover(function(e) {
+    var tag = $(this);
+
+    self._popupTimerId = setTimeout(function() {
+			// 他の機能で使っている popup ウィンドウを閉じる。
+			self._id,
+      $("div.pop-dic")
+			.filter((i, e) => e.id != self._id)
+			.hide()
+
+      self.show(tag, e);
+    }, self._popupStandbyTime);
+  })
+	.mouseout(function() {
+    // リンクからマウスがはずれたらタイマーを削除。
+    if(self._popupTimerId != null) {
+      clearTimeout(self._popupTimerId);
+      self._popupTimerId = null;
+    }
+  });
+}
+
+PopupDictionary.prototype._userSelectOn = function() {
+	const body = document.querySelector('body');
+	body.style['-webkit-user-select'] = 'auto';
+	body.style['user-select'] = 'auto';
+}
+
+PopupDictionary.prototype._userSelectOff = function() {
+	const body = document.querySelector('body');
+	body.style['-webkit-user-select'] = 'none';
+	body.style['user-select'] = 'none';
+}
+
+//
+// ポップアップの表示
+//
+// 引数
+//   tag : 辞書対象のAタグ。jQueryオブジェクト。
+//
+PopupDictionary.prototype.show = function(tag, event) {
+  var url = ""; 
+
+  if(this._url) {
+    if(typeof this._url == "function") {
+      url = this._url(tag);
+    } else {
+      url = this._url;
+    }
+  }
+  else {
+    // DOMを通すと絶対URLを取得できる。
+    url = tag.get(0).href;
+  }
+
+  if(url === undefined || url == "") return;
+
+  var title = tag.text();
+
+  if(this._title) {
+    if(typeof this._title == "function") {
+      title = this._title(tag);
+    } else {
+      title = this._title;
+    }
+  }
+  
+  //this._popup.find(".title span").text(title);
+  this._popup.find(".title span").html(title);
+
+  this._popup.find(".link a")
+             .attr("href", url)
+             .attr("target", "_blank");
+
+  // windowのサイズ
+  // ("-30"はスクロールバーの高さを考慮。)
+  var winHeight = $(window).height() - 30;
+  var winWidth  = $(window).width() - 30;
+
+  // ポップアップ画面のサイズ
+  var popHeight = this._popup.height() - 0;
+  var popWidth  = this._popup.width() - 0;
+
+  // スクロールしている量
+  var scrollTop = $(window).scrollTop() - 0;
+  var scrollLeft = $(window).scrollLeft() - 0;
+
+  // ターゲットとしているタグの位値
+  // -> マウスカーソルの位置
+  //var offset = tag.offset();
+  var offset = {
+    top : event.pageY,
+    left : event.pageX
+  };
+
+  // ポップアップ画面の位値
+  var popupOffset = this._popup.offset();
+
+  //
+  // 縦方向の位値補正処理
+  //
+
+  // Aタグより少し下に表示させる。
+  // -> マウスより少し下に表示させる。
+  //offset.top += tag.height() + 5;
+  offset.top += this._popupVerticalSpace;
+
+  // ポップアップが画面下部からはみ出すサイズ
+  var gap = Math.floor((offset.top + popHeight - scrollTop) - winHeight);
+
+  // ポップアップ画面下部からはみ出すなら、そのサイズだけ上に移動。
+  if(gap > 0) {
+    offset.top -= gap;
+  }
+
+  //
+  // 横方向の位値補正処理
+  //
+
+  // Aタグの右隣に配置
+  // -> マウスカーソルの右隣に配置
+  //offset.left += tag.width() + this._popupHorizonSpace;
+  offset.left += this._popupHorizonSpace;
+
+  // ポップアップが画面右端からはみ出すサイズ
+  var gap = Math.floor((offset.left + popWidth - scrollLeft) - winWidth);
+
+  // ポップアップ画面下部からはみ出すなら、そのサイズだけ上に移動。
+  if(gap > 0) {
+    offset.left -= gap;
+  }
+
+  //
+  // 強制移動フラグ
+  //
+  // ポップアップが画面の表示領域以外にある場合は強制的に移動させる。
+  var forceMove = false;
+
+  if(popupOffset.top > (scrollTop + winHeight)) {
+    // ポップアップ画面が表示領域より下にある場合
+    forceMove = true;
+  }
+  else if((popupOffset.top + this._popup.outerHeight()) < scrollTop) {
+    // ポップアップ画面が表示領域より上にある場合
+    forceMove = true;
+  }
+  else if(popupOffset.left > (scrollLeft + winWidth)) {
+    // ポップアップ画面が表示領域より右にある場合
+    forceMove = true;
+  }
+  else if((popupOffset.left + this._popup.outerWidth()) < scrollLeft) {
+    // ポップアップ画面が表示領域より左にある場合
+    forceMove = true;
+  }
+
+  //
+  // 表示処理
+  //
+
+  if(this._content) {
+    var content = '';
+
+    if(typeof this._content == "function") {
+      content = this._content(tag);
+    } else {
+      content = this._content;
+    }
+
+    this._popup.find('div.content').html(content);
+
+    this._popup.children("iframe").hide();
+    this._popup.show(500);
+  }
+  else {
+
+    // iframeにリンク先のURLを指定。
+    // 読み込み完了まで非表示にする。
+    var preview = this._previewUrl + encodeURIComponent(url);
+
+    if(this._showOriginalUrl) {
+      preview = url;
+    }
+
+    this._popup.children("iframe")
+               .hide()
+               .attr("src", preview);
+
+    // 読み込み中画像を表示
+    this._popup.find(".waiting").show();
+
+    // showの後にoffsetを指定しないと、
+    // hide -> showをした時に位値がずれる。
+    this._popup.show(500);
+  }
+
+  // ドラッグでポップアップ画面の位値を変更した場合は動かさない。
+  // ただし、ブラウザの表示領域外にある場合は移動する。
+  if(!this._dragged || forceMove) {
+    this._popup.offset(offset);
+
+    // 移動した場合はドラッグフラグをはずす。
+    this._dragged = false;
+  }
+}
+
+PopupDictionary.prototype.hide = function() {
+  var self = this;
+
+  self._popup.hide(500);
+  self._dragged = false;
+	self._userSelectOn();
+}
+
+
+jQuery.fn.closeButton = function(opts) {
+
+  // merge default option.
+  opts = $.extend({}, $.fn.closeButton.defaults, opts);
+
+  $(this).each(function() {
+    $(this).attr("width", opts.width)
+           .attr("height", opts.height)
+           .css({
+              "background" : opts.background,
+              "border" : "solid 1px " + opts.color,
+              "border-radius" : opts.border_radius + "px " + opts.border_radius + "px"
+            });
+  });
+
+  this.get().forEach(function(canvas){
+    if(!canvas.getContext) {
+      console.log("Not canvas tag.");
+      return;
+    }
+
+    var baseLength = (canvas.width < canvas.height) ? canvas.width : canvas.height;
+    var margin = Math.floor(baseLength / 4);
+    var lineLength = Math.ceil((baseLength - (margin * 2)) / 2);
+
+    var centerX = Math.ceil(canvas.width / 2);
+    var centerY = Math.ceil(canvas.height / 2);
+
+    var ctx = canvas.getContext("2d");
+
+    ctx.strokeStyle = opts.color;
+  
+    ctx.beginPath();
+    ctx.moveTo(centerX - lineLength, centerY - lineLength);
+    ctx.lineTo(centerX + lineLength, centerY + lineLength);
+    ctx.closePath();
+    ctx.stroke();
+  
+    ctx.beginPath();
+    ctx.moveTo(centerX + lineLength, centerY - lineLength);
+    ctx.lineTo(centerX - lineLength, centerY + lineLength);
+    ctx.closePath();
+    ctx.stroke();
+  });
+
+  return this;
+};
+
+jQuery.fn.closeButton.defaults = {
+  margin : 2,
+  color  : "#222222",
+  background : "#ffffff",
+  width  : 14,
+  height : 14,
+  "border_radius" : 5
+};
+
+var resizeTimer = null;
+var cookie;
+
+$(document).ready(function() {
+	cookie = new Cookie();
+
+	add_ddi_link();
+	add_bacteria_link();
+	add_indication_link();
+
+	init_document_index();
+})
+
+function add_ddi_link () {
+	if (typeof(japic_ddi) === 'undefined') return;
+
+	var japic_code = $("#japic_code").val();
+
+	var targets = new Array();
+	targets.push({ type:"CI",  label:"併用禁忌"});
+	targets.push({ type:"CI1", label:"原則併用禁忌"});
+	targets.push({ type:"P",   label:"併用注意"});
+	targets.push({ type:"P1",  label:"接触注意"});
+
+	targets.forEach(function(target){
+		var type  = target.type;
+		var label = target.label;
+
+		// インデント情報
+		// 相互作用ラベルに該当する情報がなければ
+		// リンク付け等を行うことは出来ないので終了
+		var ddi_data = japic_ddi[label];
+
+		if (!ddi_data) return;
+
+		// "併用禁忌", "併用注意" 等の出力欄
+		//var p = $("p[class='subtitle']:contains('" + label + "') ~ div:first");
+		//var p = $("div[class='contents-title']:contains('" + label + "') ~ div:first");
+		var p = $(".contents-title:contains('" + label + "') ~ div:first");
+
+		// 医薬品名が記載されているセル(td)
+		var cells = $("tr td:first-child", p);
+
+		// セルの数が相互作用データベース側の医薬品数と
+		// 一致していない場合は終了。
+		if (cells.length != ddi_data.length) return;
+
+		var block_index = 0;
+
+		// テーブルの各レコードの先頭セル
+		// （医薬品名が出力されているセル）でループ
+		$("tr td:first-child", p).each(function(n){
+			var cell = this;
+
+			// データベースに登録されている相互作用ブロックの詳細情報。
+			// 該当データがなければ終了。
+			if (block_index >= ddi_data.length) return;
+
+			var ddi_block = ddi_data[block_index];
+
+			// 相互作用ブロック内の医薬品名格納変数
+			// 最初のブロックのインデントは無し。
+			var ddi_div = $('<div class="idrug"></div>');
+
+			var ddi_divs = [ddi_div];
+			var drug_index = 0;
+
+			$(cell).contents().each(function(c){
+
+				if(this.nodeType == 1 && $(this).prop("tagName") == 'A'){
+					// 画面内のショートカットリンク
+					ddi_div.append($(this).clone(true));
+				}
+				else if(this.nodeType == 1 && $(this).prop("tagName") == 'BR'){
+					// 医薬品名の改行
+					drug_index++;
+
+					// 医薬品名格納変数を切り替え
+					// インデント設定（左側余白）を反映する。
+					ddi_div = $('<div class="idrug"></div>');
+					ddi_divs.push(ddi_div);
+
+					if (ddi_block.drugs.length > drug_index) {
+						var indent = ddi_block.drugs[drug_index].indent;
+						var margin = 12 * indent;
+
+						ddi_div.css({
+							"margin-left" : margin + "px"
+						});
+					}
+				}
+				else{
+					var inner;
+					if(this.nodeType == 1) {
+						// 着色用のタグなどはそのまま残す。
+						inner = this;
+					}
+					else{
+						// テキスト情報
+						inner = this.nodeValue;
+					}
+
+					// 医薬品名にKEGGエントリが定義されている場合はリンクで表示。
+					// KEGGエントリが定義されていない場合やATCコードが
+					// 定義されている場合は文字列のまま表示。
+					var entry = null;
+					if (ddi_block.drugs.length > drug_index) {
+						if (ddi_block.drugs[drug_index].name === inner) {
+							entry = ddi_block.drugs[drug_index].entry;
+						}
+					}
+
+					// テキスト情報
+					if (entry && entry.match(/[A-Z]{1,2}\d{5}/)) {
+						var url = "ddi_drug?id=" + ddi_block.drugs[drug_index].id;
+						var a = $("<a>").attr("href", url)
+						                .attr("class", "ddi-block")
+						                .attr("data-ddi-type", type)
+						                .attr("data-index", n+1)
+						                .attr("onclick", "return false;")
+						                .html(inner);
+						ddi_div.append(a);
+					} else {
+						ddi_div.append(inner);
+					}
+				}
+			});
+
+			$(cell).empty();
+
+			ddi_divs.forEach(function(div){
+				$(cell).append(div);
+			});
+
+			block_index++;
+		});
+	});
+
+	var option = {
+		showOriginalUrl : true,
+		showDescriptionLink : false,
+		allowScroll     : true,
+		popupStandbyTime : 500,
+		iframeHeight : 100,
+		iframeWidth : 300,
+		title : function(tag) {
+			var type = tag.data("ddi-type");
+
+			for(var i=0; i<targets.length; i++) {
+				if(targets[i].type == type) {
+					return targets[i].label;
+				}
+			}
+
+			return "";
+		}
+	};
+
+	var popup = new PopupDictionary("a.ddi-block", option);
+}
+
+function add_bacteria_link() {
+	var option = {
+		showOriginalUrl : true,
+		showDescriptionLink : false,
+		title : function(tag) {
+			var href = tag.attr("href");
+			return "<a href='" + href + "' style='margin-right:50px;'>適応菌種の系統分類</a>";
+		},
+		content : function(tag) {
+			return "";
+		},
+		allowScroll     : true,
+		popupStandbyTime : 500
+	};
+
+	var popup = new PopupDictionary("a.bacteria-block", option);
+}
+
+
+function add_indication_link() {
+	$("a.indication-block").click(function(){
+		return false;
+	});
+
+	var option = {
+		showOriginalUrl : true,
+		showDescriptionLink : false,
+		title : "適応症",
+		iframeHeight : 100,
+		iframeWidth : 300,
+		allowScroll     : true,
+		popupStandbyTime : 500
+	};
+
+	var popup = new PopupDictionary("a.indication-block", option);
+}
+
+
+function init_document_index () {
+	// 重要なインデックスが無い添付文書は、インデックスを展開状態にする。
+	// 例）フローラン等
+	if ($('.doc-index .link a.important').length === 0) {
+		var index_status = cookie.getValue('index');  // インデックス展開状態の初期値
+
+		$('.doc-index a.toggle').hide();
+		toggle_document_index('open', 0);
+
+		cookie.setValue('index', index_status);  // 他のページに影響しないように展開状態を初期値に戻す。
+		return
+	}
+	
+	// 前回のページ表示時のインデックス展開状態を反映する。
+	if (cookie.getValue('index') === 'opened') {
+		toggle_document_index('open', 0);
+	}
+}
+
+
+//
+// 添付文書の目次の展開処理
+//
+// 引数   mode) open      目次を全展開
+//              close     主要な目次以外閉じる
+//              指定なし  展開、非展開状態の入替え
+//       speed) 展開処理のアニメーションにかける時間（ミリ秒）
+//
+function toggle_document_index(mode, speed) {
+	var links = $('.doc-index .link a').not('.important');
+	var button = $('.doc-index .button .toggle');
+
+	if (speed == null) speed = 300;
+
+	var hide_index = function () {
+		links.hide(speed);
+		//button.children('img').attr('src', '/Fig/get_htext/close.png');
+		button.children('img').attr('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1gIKBQMleyyj+QAAANxJREFUGNONjyFrw1AUhQ9L34VETl5IRSYeg6iIBGJiA3Vx1bP7AXNjbn8mmZ2ommrUeH6qCYFSqHnlEmhIZtaJ0cA+dbh8cM4FfjDG3BtjFGZYXELTNK/W2s+u67bM/D4r1nUNInoex3FXVdVDURSbq6KIQERgjFkqpd7KstyLyCqO44PW+uhcxDRN1wD0NE0YhoHatr0lose+7+/yPP+4wT9Z/D04jgOl1CmKor2IrMIwPGitj7+i53kgIgRBsHNdd/6ZJElgrX3JsmzLzJvZat/3nwB8MfP52sZvUSdSUKkvCuIAAAAASUVORK5CYII=');
+		cookie.setValue('index', 'closed');
+	}
+
+	var open_index = function () {
+		links.show(speed);
+		//button.children('img').attr('src', '/Fig/get_htext/open.png');
+		button.children('img').attr('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1gIKBQQehWbcGgAAAOBJREFUGNOtzjGKwzAQBdAv2xLIRxBoCzdiwWBQYZc+wHa6QtocIF1It4fZA6TIAeIqCFxskSoGQwgEhIKaYLOVQUm9U/3hfYYB/nuItfZzGIbvrusQQnjBPM/RNA2klJsMwNl7f2KMbd+LjDF473cAzllVVc9xHI/zPF+stR/TNAEA0jRFURSXtm2PQohnAgBCiD3nfEUpfSzXKKUPzvlKCLEHgGQBY8xBa30lhIAQAq311RhzWDyLfwohfEkpf5cc20uxrutb3/c/AFCW5S22JF6UUnfn3No5t1ZK3WP7A5bnTd8uzpxqAAAAAElFTkSuQmCC');
+		cookie.setValue('index', 'opened');
+	}
+
+	if (mode === 'open') {
+		open_index();
+	}
+	else if (mode === 'close') {
+		hide_index();
+	}
+	else if (is_opened_document_index()) {
+		hide_index();
+	}
+	else {
+		open_index();
+	}
+}
+
+//
+// 添付文書インデックスの全項番が表示されている場合はTrueを返す。
+//
+function is_opened_document_index () {
+	return $('.doc-index .link a').not('.important').is(':visible');
+}
+
+</script>
+<link rel="canonical" href="https://www.kegg.jp/medicus-bin/japic_med?japic_code=00000185">
+<link rel="contents" href="https://www.kegg.jp/dbget-bin/www_bget?D06698+-ja">
+<link rel="index" href="https://www.kegg.jp/medicus-bin/similar_product?japic_code=00000185">
+<style>
+body {font-size:12px; font-family:verdana,arial,helvetica,sans-serif; /*margin:20px;*/ margin:0px; padding:20px; background-color:#ffffff}
+.text {font-size:14px; font-family:verdana,arial,helvetica,sans-serif}
+h1 {font-size:20px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif; margin-top:0px;}
+h2 {font-size:18px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif; color:#003399}
+h3 {font-size:16px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif}
+h4 {font-size:14px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif}
+h5 {font-size:12px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif}
+b {font-size:12px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif}
+th {font-size:12px; font-weight:bold; font-family:verdana,arial,helvetica,sans-serif}
+td {font-size:12px; font-family:verdana,arial,helvetica,sans-serif}
+pre {font-size:12px; font-family:verdana,arial,helvetica,sans-serif}
+input {font-size:12px; font-family:verdana,arial,helvetica,sans-serif}
+select {font-size:12px; font-family:verdana,arial,helvetica,sans-serif}
+a {text-decoration:none}
+a:link {color:#003399}
+a:visited {color:#003399}
+a:hover {color:#33cc99}
+
+td.bgk2 {background-color:#eae2fb}
+
+h1{
+	color:#003399;
+	background-color: #f8f8ff;
+	text-decoration: none;
+	text-indent: 0.3em;
+	border-width: 1px 1px 1px 15px;
+	border-style: solid;
+	border-color: #d0c8f0;
+	padding: 0.2em;
+}
+hr{
+	background-color: #f8f8ff;
+	border-width: 1px 1px 1px 1px;
+	border-style: solid;
+	border-color: #d0c8f0;
+}
+
+body {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  -o-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  min-width: 800px;
+  max-width: 1080px;
+}
+
+/*
+h2, h3, h4, h5 {
+  margin: 0px;
+}
+*/
+
+h3 {
+  margin-bottom: 5px;
+  margin-top: 20px;
+}
+
+/*------------------*/
+/*-- タブメニュー --*/
+/*------------------*/
+ul.menu {
+  margin: 0px;
+  padding: 0px;
+}
+ul.menu li {
+  float: left;
+  display: block;
+  font-size: 12px;
+}
+
+ul.menu li.on {
+  background-color: #d0c8f0;
+  width: 164px;
+  height: 27px;
+  margin-right: 3px;
+  text-align: center;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  -moz-border-radius-topright: 10px;
+}
+
+ul.menu li.off {
+  background-color: #f8f8ff;
+  width: 162px;
+  height: 26px;
+  margin-right: 3px;
+  text-align: center;
+  border-top: solid 1px #d0c8f0;
+  border-left: solid 1px #d0c8f0;
+  border-right: solid 1px #d0c8f0;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  -moz-border-radius-topright: 10px;
+}
+
+li.on a:visited,
+li.on a.link,
+li.off a:visited,
+li.off a.link {
+  color: #000000;
+}
+
+li.on a {
+  text-decoration: none;
+  display: block;
+  margin-top: 5px;
+}
+
+li.off a {
+  text-decoration: underline;
+  display: block;
+  margin-top: 5px;
+}
+
+div.tab-menu {
+  height: 27px;
+}
+
+div.tab-contents {
+  border-top: solid 10px #d0c8f0;
+  padding-top: 5px;
+}
+
+/*----------------*/
+/*-- 医薬品情報 --*/
+/*----------------*/
+div.drug-info {
+  margin-left: 20px;
+  width: 700px;
+}
+
+div.drug-info > table {
+  width: 500px;
+  float: left;
+}
+
+div.drug-info > table th {
+  width: 111px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+div.drug-info > table tr:not(:last-child) th,
+div.drug-info > table tr:not(:last-child) td {
+  padding-bottom: 5px;
+}
+
+div.drug-info div.cm {
+  width: 176px;
+  float: right;
+  padding: 5px;
+  border: solid 2px #d0c8f0;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  -moz-border-radius-topright: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  -moz-border-radius-bottomright: 10px;
+}
+
+/*--------------*/
+/*-- 商品情報 --*/
+/*--------------*/
+h4#products a {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+table.product_info td {
+  padding: 10px 10px 0px 10px;
+  vertical-align: top;
+}
+
+/*----------------------*/
+/*-- 添付文書情報共通 --*/
+/*----------------------*/
+
+h3.contents-title {
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+h4.contents-title {
+}
+
+h5.contents-title, div.contents-title {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  text-decoration: underline;
+  /*font-weight: normal;*/
+  font-size: 12px;
+}
+
+span.revision {
+  margin-left: 20px;
+  font-size: 12px;
+  font-weight: normal;
+  /*display: none;*/
+}
+
+div.contents-block {
+  margin: 0px;
+  margin-bottom: 10px;
+  padding-left: 20px;
+}
+
+.tbl-set {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.tbl-header, .tbl-footer {
+  font-size: 0.9em;
+}
+
+table.chemical-fact th {
+  width: 150px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+div.warning {
+  color: #bb5566;
+  border: solid 1px #bb5566;
+  padding: 4px;
+}
+
+div.contraindicate {
+  border: solid 1px #bb5566;
+  padding: 4px;
+}
+
+div.doc_request {
+  margin-bottom: 10px;
+}
+
+div.other-precaution {
+  border: solid 1px #000000;
+  padding: 4px;
+  margin-top: 10px;
+}
+
+div.other-precaution b {
+  color: #bb5566;
+}
+
+/*--------------------------*/
+/*-- 相互作用（併用禁忌） --*/
+/*--------------------------*/
+#par-10_1+div td{
+  border: solid 1px #bb5566;
+}
+
+/*----------*/
+/*-- 共通 --*/
+/*----------*/
+.ml-5 {
+	margin-left: 5px;
+}
+.ml-10 {
+	margin-left: 10px;
+}
+
+/*------------------*/
+/*-- 章番号リンク --*/
+/*------------------*/
+div.doc-index td {
+  vertical-align: top;
+}
+
+div.doc-index a {
+  white-space: nowrap;
+}
+
+div.doc-index .link a:not(:last-child) {
+  margin-right: 10px;
+}
+
+div.doc-index .link a:not(.important) {
+  display: none;
+}
+
+/*----------------------------------*/
+/*-- 章番号リンク（ポップアップ） --*/
+/*----------------------------------*/
+#paragraph-index {
+  border: solid 1px #000000;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  position: fixed;
+  top: 20px;
+  right: 10px;
+  overflow: auto;
+}
+
+#toggle-button {
+  color: #000000;
+}
+
+#paragraph-index ol {
+	display: none;
+  margin: 0px;
+  padding-left: 30px;
+}
+
+/*------------------------*/
+/*-- ポップアップ表示用 --*/
+/*------------------------*/
+a.ddi-block, a.bacteria-block, a.indication-block {
+  cursor: text;
+  color: inherit;
+  text-decolation: none;
+  border-bottom: dashed 1px #003399;
+}
+
+/*-------------------*/
+/*-- micro clearfx --*/
+/*-------------------*/
+.clearfix:before, .clearfix:after {
+  content: "";
+  display: table;
+}
+
+.clearfix:after{
+  clear: both;
+}
+
+.clearfix{
+  zoom: 1;
+} /* For IE 6/7 */
+
+</style>
+</head>
+<body>
+
+<table style="width:700px;">
+ <tr>
+  <td>
+   <h1>医療用医薬品 : 葛根湯</h1>
+  </td>
+  <td>
+   <a href="search_drug?mode=restore">List</a>&nbsp;&nbsp;
+   <a href="/kegg/medicus/">Top</a>
+  </td>
+ </tr>
+</table>
+
+<div class="tab-menu">
+ <ul class="menu clearfix">
+  <li class="on"><a href="japic_med?japic_code=00000185">添付文書情報</a></li>
+  <li class="off"><a href="japic_med_product?id=00000185">商品詳細情報</a></li>
+ </ul>
+</div>
+<div class="tab-contents">
+ <h3>医薬品情報</h3>
+ <hr>
+ <div class="drug-info clearfix">
+  <table>
+   
+<tr>
+ <th>総称名</th>
+ <td>葛根湯</td>
+</tr>
+
+
+
+   
+<tr>
+ <th>一般名</th>
+ <td>葛根湯</td>
+</tr>
+
+
+
+   
+
+
+   
+
+
+   
+<tr>
+ <th>薬効分類名</th>
+ <td>漢方製剤</td>
+</tr>
+
+
+
+   
+<tr>
+ <th>薬効分類番号</th>
+ <td><a href="/brite/htext=jp08301.keg&query=5200&option=-anb">5200</a></td>
+</tr>
+
+
+
+   
+   
+<tr>
+ <th>KEGG DRUG</th>
+ <td>
+  <div>
+   <a href="/entry/D06698+-ja">D06698</a>
+   <span class="ml-5">葛根湯エキス </span>
+  </div>
+  <div>
+   <a href="similar_product?kegg_drug=D06698&jtc=5200&japic_code=00000185">商品一覧</a>
+   
+   
+   <a class="ml-10" href="drug_interaction?japic_code=00000185">相互作用情報</a>
+   
+  </div>
+ </td>
+</tr>
+
+
+
+   
+
+
+   <tr>
+    <th>JAPIC</th>
+    <td>
+     <a href="https://pins.japic.or.jp/pdf/newPINS/00000185.pdf">添付文書(PDF)</a>
+    </td>
+   </tr>
+  </table>
+  <div class="cm">
+   この情報は <a href="/ja/">KEGG</a> データベースにより提供されています。<br>
+   医薬品情報の概要は <a href="/kegg/drug/drug_ja.html">KEGG DRUG</a> ページをご覧ください。
+  </div>
+ </div>
+
+ <h3>添付文書情報<span class="revision">2026年8月 改訂（第2版）</span></h3>
+ <hr>
+ <div class="doc-index">
+  <table>
+   <tr>
+    <td class="button">
+     <a class="toggle" href="javascript:void(toggle_document_index())"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1gIKBQMleyyj+QAAANxJREFUGNONjyFrw1AUhQ9L34VETl5IRSYeg6iIBGJiA3Vx1bP7AXNjbn8mmZ2ommrUeH6qCYFSqHnlEmhIZtaJ0cA+dbh8cM4FfjDG3BtjFGZYXELTNK/W2s+u67bM/D4r1nUNInoex3FXVdVDURSbq6KIQERgjFkqpd7KstyLyCqO44PW+uhcxDRN1wD0NE0YhoHatr0lose+7+/yPP+4wT9Z/D04jgOl1CmKor2IrMIwPGitj7+i53kgIgRBsHNdd/6ZJElgrX3JsmzLzJvZat/3nwB8MfP52sZvUSdSUKkvCuIAAAAASUVORK5CYII=" data-src="/Fig/get_htext/close.png"></a>
+    </td>
+    <td class="link">
+     
+     
+     
+     <a href="#par-4" class="important">4.効能または効果</a>
+     
+     <a href="#par-6" class="important">6.用法及び用量</a>
+     
+     <a href="#par-8" class="important">8.重要な基本的注意</a>
+     <a href="#par-9">9.特定の背景を有する患者に関する注意</a>
+     <a href="#par-10" class="important">10.相互作用</a>
+     <a href="#par-11" class="important">11.副作用</a>
+     
+     
+     
+     <a href="#par-15">15.その他の注意</a>
+     
+     
+     
+     <a href="#par-19">19.有効成分に関する理化学的知見</a>
+     <a href="#par-20">20.取扱い上の注意</a>
+     
+     <a href="#par-22">22.包装</a>
+     
+     <a href="#par-24">24.文献請求先及び問い合わせ先</a>
+     
+     <a href="#par-26">26.製造販売業者等</a>
+    </td>
+   </tr>
+  </table>
+ </div>
+ 
+ <h4 class="contents-title" id="products">
+  商品情報
+  <a href="japic_med_product?id=00000185">3.組成・性状</a>
+ </h4>
+ <div class="contents-block">
+ <table class="product_info">
+ <tr>
+  <th>販売名</th>
+  <th>欧文商標名</th>
+  <th>製造会社</th>
+  <th>YJコード</th>
+  <th>薬価</th>
+  <th>規制区分</th>
+ </tr>
+ 
+ <tr>
+  <td>
+   <a href="japic_med_product?id=00000185-001#00000185-001">コタロー葛根湯エキス細粒</a>
+   
+  </td>
+  <td></td>
+  <td>小太郎漢方製薬</td>
+  <td>5200013C1039</td>
+  <td>9.8円／ｇ</td>
+  <td></td>
+ </tr>
+ 
+</table>
+
+
+ </div>
+
+ 
+ 
+ 
+ <h4 class="contents-title" id="par-4">4. 効能または効果</h4><div class="contents-block"><div>頭痛、発熱、悪寒がして、自然発汗がなく、項、肩、背などがこるもの、あるいは下痢するもの。</div><div>感冒、鼻かぜ、蓄膿症、扁桃腺炎、結膜炎、乳腺炎、湿疹、蕁麻疹、肩こり、神経痛、偏頭痛。</div></div>
+ 
+ <h4 class="contents-title" id="par-6">6. 用法及び用量</h4>
+<div class="contents-block"><div>通常、成人1日7.5gを2〜3回に分割し、食前又は食間に経口投与する。<br>なお、年齢、体重、症状により適宜増減する。</div></div>
+
+ 
+ <h4 class="contents-title" id="par-8">8. 重要な基本的注意</h4>
+<div class="contents-block"><div><b id="par-8_1">8.1</b>　本剤の使用にあたっては、患者の証（体質・症状）を考慮して投与すること。なお、経過を十分に観察し、症状・所見の改善が認められない場合には、継続投与を避けること。</div><div><b id="par-8_2">8.2</b>　本剤にはカンゾウが含まれているので、血清カリウム値や血圧値等に十分留意すること。［<a href="#par-10_2">10.2</a>、<a href="#par-11_1_1">11.1.1</a>、<a href="#par-11_1_2">11.1.2</a>参照］</div><div><b id="par-8_3">8.3</b>　他の漢方製剤等を併用する場合は、含有生薬の重複に注意すること。</div></div>
+
+ <h4 class="contents-title" id="par-9">9. 特定の背景を有する患者に関する注意</h4>
+<div class="contents-block"><h5 class="contents-title" id="par-9_1">9.1　合併症・既往歴等のある患者</h5>
+<div class="contents-block"><div class="contents-title" ><b id="par-9_1_1">9.1.1　病後の衰弱期、著しく体力の衰えている患者</b></div>
+<div class="contents-block"><div>副作用があらわれやすくなり、その症状が増強されるおそれがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_2">9.1.2　著しく胃腸の虚弱な患者</b></div>
+<div class="contents-block"><div>食欲不振、胃部不快感、悪心、嘔吐等があらわれることがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_3">9.1.3　食欲不振、悪心、嘔吐のある患者</b></div>
+<div class="contents-block"><div>これらの症状が悪化するおそれがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_4">9.1.4　発汗傾向の著しい患者</b></div>
+<div class="contents-block"><div>発汗過多、全身脱力感等があらわれることがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_5">9.1.5　狭心症、心筋梗塞等の循環器系の障害のある患者、又はその既往歴のある患者</b></div>
+<div class="contents-block"><div>当該疾患及びその症状が悪化するおそれがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_6">9.1.6　重症高血圧症の患者</b></div>
+<div class="contents-block"><div>当該疾患及びその症状が悪化するおそれがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_7">9.1.7　排尿障害のある患者</b></div>
+<div class="contents-block"><div>当該疾患及びその症状が悪化するおそれがある。</div></div>
+<div class="contents-title" ><b id="par-9_1_8">9.1.8　甲状腺機能亢進症の患者</b></div>
+<div class="contents-block"><div>当該疾患及びその症状が悪化するおそれがある。</div></div>
+</div>
+<h5 class="contents-title" id="par-9_2">9.2　腎機能障害患者</h5>
+<div class="contents-block"><div class="contents-title" ><b id="par-9_2_1">9.2.1　高度の腎障害のある患者</b></div>
+<div class="contents-block"><div>当該疾患及びその症状が悪化するおそれがある。</div></div>
+</div>
+<h5 class="contents-title" id="par-9_5">9.5　妊婦</h5>
+<div class="contents-block"><div>妊婦又は妊娠している可能性のある女性には、治療上の有益性が危険性を上回ると判断される場合にのみ投与すること。</div></div>
+<h5 class="contents-title" id="par-9_6">9.6　授乳婦</h5>
+<div class="contents-block"><div>治療上の有益性及び母乳栄養の有益性を考慮し、授乳の継続又は中止を検討すること。</div></div>
+<h5 class="contents-title" id="par-9_7">9.7　小児等</h5>
+<div class="contents-block"><div>小児等を対象とした臨床試験は実施していない。</div></div>
+<h5 class="contents-title" id="par-9_8">9.8　高齢者</h5>
+<div class="contents-block"><div>減量するなど注意すること。一般に生理機能が低下している。</div></div>
+</div>
+
+ <h4 class="contents-title" id="par-10">10. 相互作用</h4>
+<div class="contents-block"><h5 class="contents-title" id="par-10_2">10.2　併用注意</h5>
+<div class="contents-block"><div class="tbl-set"><table cellpadding="3" border="1" style="border-collapse: collapse;">
+<tr><td rowspan="1" colspan="1" style="width:30%;">マオウ含有製剤<br>小青竜湯<br>麻黄湯<br>麻黄附子細辛湯　等<br>エフェドリン類含有製剤<br>エフェドリン塩酸塩<br>dl-メチルエフェドリン塩酸塩<br>フェキソフェナジン塩酸塩・塩酸プソイドエフェドリン　等<br>モノアミン酸化酵素（MAO）阻害剤<br>セレギリン塩酸塩<br>ラサギリンメシル酸塩　等<br>甲状腺製剤<br>チロキシン<br>リオチロニン　等<br>カテコールアミン製剤<br>アドレナリン<br>イソプレナリン　等<br>キサンチン系製剤<br>テオフィリン<br>ジプロフィリン　等</td><td rowspan="1" colspan="1" style="width:40%;">不眠、発汗過多、頻脈、動悸、全身脱力感、精神興奮等があらわれやすくなるので、減量するなど慎重に投与すること。</td><td rowspan="1" colspan="1" style="width:30%;">交感神経刺激作用が増強されることが考えられる。</td></tr>
+<tr><td rowspan="1" colspan="1" style="width:30%;">カンゾウ含有製剤<br>芍薬甘草湯<br>補中益気湯<br>抑肝散　等<br>グリチルリチン酸及びその塩類を含有する製剤<br>グリチルリチン酸一アンモニウム・グリシン・L-システイン<br>グリチルリチン酸一アンモニウム・グリシン・DL-メチオニン配合錠　等<br>［<a href="#par-8_2">8.2</a>、<a href="#par-11_1_1">11.1.1</a>、<a href="#par-11_1_2">11.1.2</a>参照］</td><td rowspan="1" colspan="1" style="width:40%;">偽アルドステロン症があらわれやすくなる。また、低カリウム血症の結果として、ミオパチーがあらわれやすくなる。</td><td rowspan="1" colspan="1" style="width:30%;">グリチルリチン酸は尿細管でのカリウム排泄促進作用があるため、血清カリウム値の低下が促進されることが考えられる。</td></tr>
+</table>
+</div></div>
+</div>
+
+ <h4 class="contents-title" id="par-11">11. 副作用</h4>
+<div class="contents-block"><h5 class="contents-title" id="par-11_1">11.1　重大な副作用</h5>
+<div class="contents-block"><div>次の副作用があらわれることがあるので、観察を十分に行い、異常が認められた場合には投与を中止するなど適切な処置を行うこと。</div><div class="contents-title" ><b id="par-11_1_1">11.1.1　偽アルドステロン症</b>（頻度不明）</div>
+<div class="contents-block"><div>低カリウム血症、血圧上昇、ナトリウム・体液の貯留、浮腫、体重増加等の偽アルドステロン症があらわれることがあるので、観察（血清カリウム値の測定等）を十分に行い、異常が認められた場合には投与を中止し、カリウム剤の投与等の適切な処置を行うこと。［<a href="#par-8_2">8.2</a>、<a href="#par-10_2">10.2</a>参照］</div></div>
+<div class="contents-title" ><b id="par-11_1_2">11.1.2　ミオパチー</b>（頻度不明）</div>
+<div class="contents-block"><div>低カリウム血症の結果としてミオパチーがあらわれることがあるので、観察を十分に行い、脱力感、四肢痙攣・麻痺等の異常が認められた場合には投与を中止し、カリウム剤の投与等の適切な処置を行うこと。［<a href="#par-8_2">8.2</a>、<a href="#par-10_2">10.2</a>参照］</div></div>
+<div class="contents-title" ><b id="par-11_1_3">11.1.3　肝機能障害、黄疸</b>（いずれも頻度不明）</div>
+<div class="contents-block"><div>AST、ALT、Al-P、γ-GTP等の著しい上昇を伴う肝機能障害、黄疸があらわれることがある。</div></div>
+<div><b id="par-11_1_4">11.1.4　多形紅斑</b>（頻度不明）</div></div>
+<h5 class="contents-title" id="par-11_2">11.2　その他の副作用</h5>
+<div class="contents-block"><div class="tbl-set"><table cellpadding="3" border="1" style="border-collapse: collapse;">
+<caption><div>次の副作用があらわれることがあるので、観察を十分に行い、異常が認められた場合には投与を中止するなど適切な処置を行うこと。</div></caption>
+<tr><td rowspan="1" colspan="1" style="width:15%;">&nbsp;</td><td rowspan="1" colspan="1" style="text-align:center;width:85%;">頻度不明</td></tr>
+<tr><td rowspan="1" colspan="1" style="width:15%;">過敏症</td><td rowspan="1" colspan="1" style="width:85%;">発疹、発赤、<span class="exchar">そう</span>痒等</td></tr>
+<tr><td rowspan="1" colspan="1" style="width:15%;">自律神経系</td><td rowspan="1" colspan="1" style="width:85%;">不眠、発汗過多、頻脈、動悸、全身脱力感、精神興奮等</td></tr>
+<tr><td rowspan="1" colspan="1" style="width:15%;">消化器</td><td rowspan="1" colspan="1" style="width:85%;">食欲不振、胃部不快感、悪心、嘔吐等</td></tr>
+<tr><td rowspan="1" colspan="1" style="width:15%;">泌尿器</td><td rowspan="1" colspan="1" style="width:85%;">排尿障害等</td></tr>
+</table>
+</div></div>
+</div>
+
+ 
+ 
+ 
+ <h4 class="contents-title" id="par-15">15. その他の注意</h4>
+<div class="contents-block"><h5 class="contents-title" id="par-15_1">15.1　臨床使用に基づく情報</h5>
+<div class="contents-block"><div>湿疹、皮膚炎等が悪化することがある。</div></div>
+</div>
+
+ 
+ 
+ 
+ <h4 class="contents-title" id="par-19">19. 有効成分に関する理化学的知見</h4>
+<div class="contents-block">
+<h4>19.1. 葛根湯</h4>
+<div class="contents-block">
+ <table class="chemical-fact">
+ 
+ 
+ <tr>
+  <th>一般的名称</th>
+  <td>葛根湯</td>
+ </tr>
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ 
+ <tr>
+  <th>KEGG DRUG</th>
+  <td>
+   
+   <a href="/entry/D06698+-ja" style="display:block;">
+    
+     D06698
+    
+   </a>
+   
+  </td>
+ </tr>
+ 
+ </table>
+</div>
+
+
+
+
+</div>
+
+ <h4 class="contents-title" id="par-20">20. 取扱い上の注意</h4>
+<div class="contents-block"><div><b id="par-20_1">20.1</b>　本剤の品質を保つため、できるだけ湿気を避け、直射日光の当たらない涼しい所に保管すること。</div><div><b id="par-20_2">20.2</b>　開封後は特に湿気を避け、取扱いに注意すること。</div><div><b id="par-20_3">20.3</b>　本剤は生薬を原料としているので、色調等が異なることがある。</div></div>
+
+ 
+ <h4 class="contents-title" id="par-22">22. 包装</h4>
+<div class="contents-block"><div>500g［ポリ瓶、バラ］</div><div>2.5g×42包［分包］</div><div>2.5g×189包［分包］</div></div>
+
+ 
+ <h4 class="contents-title" id="par-24">24. 文献請求先及び問い合わせ先</h4>
+<div class="contents-block"><div class="contents-title" >文献請求先</div>
+<div class="contents-block"><div class="doc_request">
+ 
+  <div>
+  小太郎漢方製薬株式会社
+  医薬事業部　（9：00〜17：30／土、日、祝日、弊社休日を除く）
+  </div>
+ 
+ 
+  <div>
+  &#12306;531-0071
+  大阪市北区中津2丁目5番23号
+  </div>
+ 
+ <div>電話：06-6371-9106</div>
+ <div>FAX：06-6377-4140</div>
+ 
+ 
+ 
+</div>
+
+</div>
+<div class="contents-title" >製品情報問い合わせ先</div>
+<div class="contents-block"><div class="doc_request">
+ 
+  <div>
+  小太郎漢方製薬株式会社
+  医薬事業部　（9：00〜17：30／土、日、祝日、弊社休日を除く）
+  </div>
+ 
+ 
+  <div>
+  &#12306;531-0071
+  大阪市北区中津2丁目5番23号
+  </div>
+ 
+ <div>電話：06-6371-9106</div>
+ <div>FAX：06-6377-4140</div>
+ 
+ 
+ 
+</div>
+
+</div>
+</div>
+
+ 
+ <h4 class="contents-title" id="par-26">26. 製造販売業者等</h4>
+<div class="contents-block"><h5 class="contents-title" id="par-26_1">26.1　製造販売元</h5>
+<div class="contents-block"> <div>小太郎漢方製薬株式会社</div>
+ 
+  <div>
+  
+  大阪市北区中津2丁目5番23号
+  </div>
+ 
+ 
+ 
+ 
+ 
+
+</div>
+</div>
+
+
+ 
+ 
+</div>
+
+
+<script type="text/javascript">var japic_ddi = {"併用注意":[{"drugs":[{"entry":null,"id":39355,"indent":0,"name":"マオウ含有製剤"},{"entry":"D06987","id":39356,"indent":1,"name":"小青竜湯"},{"entry":"D07042","id":39357,"indent":1,"name":"麻黄湯"},{"entry":"D07043","id":39358,"indent":1,"name":"麻黄附子細辛湯　等"},{"entry":"DG03282","id":39359,"indent":0,"name":"エフェドリン類含有製剤"},{"entry":"D01386","id":39360,"indent":1,"name":"エフェドリン塩酸塩"},{"entry":"D02109","id":39361,"indent":1,"name":"dl-メチルエフェドリン塩酸塩"},{"entry":"D10252","id":39362,"indent":1,"name":"フェキソフェナジン塩酸塩・塩酸プソイドエフェドリン　等"},{"entry":"DG01568","id":39363,"indent":0,"name":"モノアミン酸化酵素（MAO）阻害剤"},{"entry":"D00785","id":39364,"indent":1,"name":"セレギリン塩酸塩"},{"entry":"D02562","id":39365,"indent":1,"name":"ラサギリンメシル酸塩　等"},{"entry":"DG01953","id":39366,"indent":0,"name":"甲状腺製剤"},{"entry":"DG00510","id":39367,"indent":1,"name":"チロキシン"},{"entry":"DG01372","id":39368,"indent":1,"name":"リオチロニン　等"},{"entry":"DG01951","id":39369,"indent":0,"name":"カテコールアミン製剤"},{"entry":"DG00013","id":39370,"indent":1,"name":"アドレナリン"},{"entry":"DG00211","id":39371,"indent":1,"name":"イソプレナリン　等"},{"entry":"DG01616","id":39372,"indent":0,"name":"キサンチン系製剤"},{"entry":"DG01061","id":39373,"indent":1,"name":"テオフィリン"},{"entry":"D00691","id":39374,"indent":1,"name":"ジプロフィリン　等"}],"id":10210},{"drugs":[{"entry":null,"id":39348,"indent":0,"name":"カンゾウ含有製剤"},{"entry":"D06979","id":39349,"indent":1,"name":"芍薬甘草湯"},{"entry":"D06789","id":39350,"indent":1,"name":"補中益気湯"},{"entry":"D07049","id":39351,"indent":1,"name":"抑肝散　等"},{"entry":"DG03217 D04990 D04993","id":39352,"indent":0,"name":"グリチルリチン酸及びその塩類を含有する製剤"},{"entry":null,"id":39353,"indent":1,"name":"グリチルリチン酸一アンモニウム・グリシン・L-システイン"},{"entry":null,"id":39354,"indent":1,"name":"グリチルリチン酸一アンモニウム・グリシン・DL-メチオニン配合錠　等"}],"id":10211}]};</script>
+
+
+<script src="/js/kegg-scroll-to-top.js?right=20&bottomTerm=60" type="application/x-data"></script>
+<script>
+//
+// 画面の右下にトップに戻るボタンを表示する。
+// 本スクリプトを読み込むだけで自動的に機能が追加される。
+// 必要なライブラリ: jquery
+//
+// スクロールしても戻るボタンが表示されない場合は
+// ブラウザの高さが取得できていない可能性があるため、
+// HTML の先頭に '<!DOCTYPE html>' の宣言をつけてみる。
+//
+// bottomTerm を指定した時に最後までスクロールしても
+// 配置がずれることがある。
+// ウィンドウの高さを正しく取得できないのが原因のため、
+// この script を読み込むタグは html の最後の方に配置する。
+//
+if (typeof jQuery === 'function') {
+	$(function () {
+		const $window = $(window);
+		let windowHeight;
+		let clientHeight;
+		let clientWidth;
+
+		const option = {
+			// 画面右端からのボタンの位置。
+			right: 10,
+			// 画面下部からのボタンの位置。
+			bottom: 10,
+			// フッターなどを回避して配置したい場合の画面下部からのボタン位置。
+			// 画面下部までスクロールした時に option.bottom の位置から
+			// option.bottomTerm の位置へボタンをスライドする。
+			// bottomTerm > bottom となるように設定する。
+			// bottomTerm < bottom の場合は bottom の値で上書きされる。
+			bottomTerm: 10,
+			zIndex: 100,
+		}
+		// script タグの URL からオプションを取得する。
+		$('script')
+		.each((i, e) => {
+			const src = $(e).attr('src')
+			if (!src || !src.match(/kegg-scroll-to-top.js/)) return
+			['bottom', 'bottomTerm', 'right', 'zIndex'].forEach(key => {
+				const re = new RegExp(`[\\?\\&]${key}=(\\d{1,5})`)
+				if ((m = src.match(re))) {
+					option[key] = parseInt(m[1])
+				}
+			});
+			['onclick', 'oncomplete'].forEach(key => {
+				const re = new RegExp(`[\\?\\&]${key}=(\\w+)`)
+				if ((m = src.match(re))) {
+					option[key] = m[1]
+				}
+			})
+		})
+
+		// bottomTerm > bottom に設定する。
+		option.bottomTerm = Math.max(option.bottom, option.bottomTerm)
+
+		// スクロールも含めたウィンドウの高さを取得する。
+		const getWindowHeight = () => {
+			return Math.max(
+				document.body.scrollHeight, document.documentElement.scrollHeight,
+				document.body.offsetHeight, document.documentElement.offsetHeight,
+				document.body.clientHeight, document.documentElement.clientHeight
+			)
+		}
+
+		const updateWindowSize = () => {
+			windowHeight = getWindowHeight()
+			clientHeight = $window.height()
+			clientWidth = $window.width()
+		};
+		updateWindowSize();
+
+		// スクロールボタンを body タグに追加
+		const button = `
+		<div style="position:fixed; display:none; right:${option.right}px; bottom:${option.bottom}px; cursor:pointer; z-index:${option.zIndex};">
+			<svg width="25" height="25">
+			<g transform="scale(0.25)">
+				<circle cx="50" cy="50" r="43" fill="#ffffff" fill-opacity="0.7" stroke-width="7" stroke="#999999" />
+				<path d="M50 20 L20 50 L80 50 Z" style="fill:#999999" />
+				<line x1="50" y1="50" x2="50" y2="80" stroke-width="10" stroke="#999999" />
+			</g>
+			</svg>
+		</div>
+		`
+
+		const optOnAction = (funcName, e, args) => {
+			if (funcName == null) { return null }
+			const func = window[funcName]
+			if (typeof func != 'function') { return null }
+			return func.apply(e.delegateTarget, args)
+		}
+
+		// オプションで指定された onclick 関数の実行。
+		const optOnClick = (e, args) => optOnAction(option.onclick, e, args)
+
+		// オプションで指定された oncomplete 関数の実行。
+		const optOnComplete = (e, args) => optOnAction(option.oncomplete, e, args)
+
+		const $buttonV =
+			$(button)
+			.on('click', e => {
+				const ret = optOnClick(e, ['ScrollToTop'])
+				if (typeof ret === 'boolean' && !ret) { return }
+
+				$('body,html')
+				.stop()
+				.animate({
+					scrollTop: 0,
+				}, {
+					complete: () => optOnComplete(e, ['ScrollToTop']),
+					duration: 500,
+				})
+			})
+			.appendTo('body')
+
+		const $buttonH =
+			$(button)
+			.find('svg')
+			.css({
+				transform: 'rotate(-90deg)',
+			})
+			.end()
+			.on('click', e => {
+				const ret = optOnClick(e, ['ScrollToLeft'])
+				if (typeof ret === 'boolean' && !ret) { return }
+
+				$('body,html')
+				.stop()
+				.animate({
+					scrollLeft: 0,
+				}, {
+					complete: () => optOnComplete(e, ['ScrollToLeft']),
+					duration: 500,
+				})
+			})
+			.appendTo('body')
+
+		// ボタンの配置処理
+		const deployButtonVertical = () => {
+			if (option.bottom === option.bottomTerm) return
+			const space = windowHeight - (clientHeight + $window.scrollTop())
+			let bottom = option.bottom
+			if (space <= (option.bottomTerm - option.bottom)) {
+				bottom = option.bottomTerm - space
+			}
+			$buttonV.css({
+				position: 'fixed',
+				bottom: `${bottom}px`
+			})
+			$buttonH.css({
+				position: 'fixed',
+				bottom: `${bottom}px`
+			})
+		}
+
+		const deployButtonHorizontal = () => {
+			if (buttonHisVisible()) {
+				let right = option.right
+				if (buttonVisVisible()) {
+					right += $buttonV.width() + 5
+				}
+				$buttonH.css({
+					right: `${right}px`
+				})
+			}
+		}
+
+		const buttonVisVisible = () => ($window.scrollTop() > clientHeight)
+		const buttonHisVisible = () => ($window.scrollLeft() > clientWidth)
+
+		// ボタンの表示、非表示切り替え
+		const toggleButtonV = () => {
+			const show = buttonVisVisible()
+			$buttonV.toggle(show)
+		}
+
+		const toggleButtonH = () => {
+			const show = buttonHisVisible()
+			$buttonH.toggle(show)
+		}
+
+		const refresh = () => {
+			deployButtonVertical()
+			deployButtonHorizontal()
+			toggleButtonV()
+			toggleButtonH()
+		}
+		refresh()
+	
+		$window
+		.on('scroll', e => {
+			refresh()
+		})
+		.on('resize', e => {
+			updateWindowSize();
+			refresh()
+		})
+
+		// body 要素の大きさが変更されたことを検知する。
+		// ウィンドウサイズの変更は無く、タグの追加や表示／非表示の切り替えで
+		// body の高さや幅が変更された場合に、ボタンの再配置を行う。
+		const resizeObserver = new ResizeObserver((entries) => {
+			updateWindowSize();
+			refresh()
+		});
+		resizeObserver.observe(document.querySelector('body'));
+	})
+}
+else {
+	console.log('jQuery not found.')
+}
+
+</script>
+
+
+<hr>
+<table style="width:100%; margin:0px; padding:0px;">
+ <tr>
+  <td>
+   <b>
+    [
+    <a href="/kegg/kegg_ja.html">KEGG</a> |
+    <a href="/kegg/drug/drug_ja.html">KEGG DRUG</a> |
+    <a href="/kegg/medicus/">KEGG MEDICUS</a>
+    ]
+   </b>
+  </td>
+  <td style="text-align:right;">
+
+  
+  2026/09/16 版
+  
+
+  
+
+  
+
+  
+
+  </td>
+ </tr>
+</table>
+</body>
+</html>

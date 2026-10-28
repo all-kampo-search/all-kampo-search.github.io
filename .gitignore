@@ -1,0 +1,38 @@
+node_modules
+.netlify
+.DS_Store
+
+# 機密情報・APIトークン
+NETLIFY_API_TOKEN.txt
+SiteID.txt
+*.token
+*.env
+
+# 一時作業スクリプト・テストファイル
+temp_*.html
+temp.txt
+t.js
+t2.js
+t3.js
+t4.js
+test-*.js
+patch-*.js
+patch_*.js
+fix-*.js
+fix_*.js
+fix.js
+check-*.js
+check_*.js
+find_*.js
+*.tmp
+backup_csv_orig/
+
+# scripts 内の一時テスト・修正用ファイル
+scripts/test*.js
+scripts/verify*.js
+scripts/cache*.json
+scripts/check*.js
+scripts/fix*.js
+scripts/refetch*.js
+scripts/search*.js
+scripts/node_modules/

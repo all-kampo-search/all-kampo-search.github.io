@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>漢方薬 医薬品検索 - 日本漢方生薬製剤協会 会員各社データベース</title>
+  <meta name="description" content="ツムラ、クラシエ、小太郎漢方製薬、イスクラ産業、ウチダ和漢薬、大杉製薬、三和生薬、ジェーピーエス製薬など、日本漢方生薬製剤協会（日漢協）加盟各社の医療用・一般用漢方製剤を網羅。">
+  <meta name="theme-color" content="#1a5f3f">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- ヘッダー -->
+  <header class="site-header shadow-xs sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <a href="#/" class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2 hover:opacity-95">
+          <span>漢方薬 医薬品検索</span>
+          <span id="totalCountBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-800 text-emerald-100 font-normal">
+            読み込み中...
+          </span>
+        </a>
+      </div>
+      <div class="text-xs text-emerald-100 hidden sm:block">
+        日本漢方生薬製剤協会 会員各社
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex-1 w-full space-y-3.5">
+
+    <!-- ==========================================
+         1. 検索一覧ビュー (mainSearchView)
+         ========================================== -->
+    <div id="mainSearchView" class="space-y-3.5">
+      
+      <!-- 検索 & フィルターエリア -->
+      <div class="bg-white rounded-lg border border-slate-200 p-3.5 sm:p-4 space-y-2.5 shadow-2xs">
+        
+        <!-- 検索対象切り替えタブ ＆ 右端ツール（比較ボタン・しおり型ブックマーク切り替え） -->
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <!-- 左側: 検索対象 -->
+          <div class="flex items-center gap-1">
+            <span class="text-[11px] font-bold text-slate-500 mr-1">検索対象:</span>
+            <button 
+              type="button" 
+              id="searchTarget-name" 
+              onclick="setSearchTarget('name')" 
+              class="search-target-btn active px-2.5 py-0.5 rounded text-xs">
+              商品名
+            </button>
+            <button 
+              type="button" 
+              id="searchTarget-ingredient" 
+              onclick="setSearchTarget('ingredient')" 
+              class="search-target-btn px-2.5 py-0.5 rounded text-xs">
+              生薬名
+            </button>
+            <button 
+              type="button" 
+              id="searchTarget-efficacy" 
+              onclick="setSearchTarget('efficacy')" 
+              class="search-target-btn px-2.5 py-0.5 rounded text-xs">
+              効能効果
+            </button>
+          </div>
+
+          <!-- 右端: 比較モードボタン ＆ しおり型ブックマーク切り替えボタン -->
+          <div class="flex items-center gap-2">
+            <!-- 比較モード切替ボタン -->
+            <button 
+              type="button" 
+              id="compareModeBtn" 
+              onclick="toggleCompareMode()" 
+              class="compare-mode-btn" 
+              title="クリックして商品を選択し、比較表を作成します">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              <span id="compareModeBtnText">比較</span>
+            </button>
+
+            <!-- ブックマーク切り替え（参照元準拠: すべて → ブックマーク1 → ブックマーク2） -->
+            <button 
+              type="button" 
+              id="bookmarkCycleBtn" 
+              onclick="cycleBookmarkFilter()" 
+              class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition shadow-2xs font-medium" 
+              title="クリックで ブックマーク1 → ブックマーク2 → すべて を切り替えます">
+              <svg id="bookmarkCycleIcon" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+              </svg>
+              <span id="bookmarkCycleLabel">すべて</span>
+              <span id="bookmarkCycleBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 検索入力窓 -->
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="処方名、商品名で検索（漢字・ひらがな・カタカナ対応 例: 葛根湯、かっこんとう）..." 
+            class="w-full pl-9 pr-28 py-2 bg-slate-50 hover:bg-slate-100/60 focus:bg-white border border-slate-200 rounded text-sm focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 outline-none transition"
+          >
+          <!-- 右端ツール: クリアボタン(✕) ＆ 「□を除く」チェックボックス -->
+          <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1.5 select-none">
+            <!-- 入力クリアボタン (✕) -->
+            <button 
+              type="button" 
+              id="clearSearchBtn" 
+              onclick="clearSearchInput()" 
+              class="hidden text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200 transition text-xs font-bold leading-none cursor-pointer" 
+              title="入力をクリア">
+              ✕
+            </button>
+            <!-- 「□を除く」チェックボックス（生薬名選択時のみ表示） -->
+            <div id="excludeHerbContainer" class="hidden flex items-center">
+              <label id="excludeHerbLabel" class="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-200 transition" title="チェックを入れると入力した生薬を含まない処方を検索します">
+                <input type="checkbox" id="excludeHerbCheckbox" onchange="toggleExcludeHerb(this.checked)" class="w-3.5 h-3.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer">
+                <span id="excludeHerbText" class="font-medium text-slate-700">を除く</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- フィルター行 -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1.5 border-t border-slate-100 text-xs">
+          
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- 区分トグル -->
+            <div class="flex items-center space-x-1 bg-slate-100 p-0.5 rounded border border-slate-200">
+              <label class="cursor-pointer">
+                <input type="radio" name="drugType" value="all" checked class="peer sr-only">
+                <span class="px-2.5 py-1 rounded text-slate-700 peer-checked:bg-white peer-checked:text-emerald-800 peer-checked:font-bold peer-checked:shadow-2xs block transition">
+                  すべて
+                </span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="drugType" value="medical" class="peer sr-only">
+                <span class="px-2.5 py-1 rounded text-slate-700 peer-checked:bg-white peer-checked:text-emerald-800 peer-checked:font-bold peer-checked:shadow-2xs block transition">
+                  医療用
+                </span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="drugType" value="otc" class="peer sr-only">
+                <span class="px-2.5 py-1 rounded text-slate-700 peer-checked:bg-white peer-checked:text-emerald-800 peer-checked:font-bold peer-checked:shadow-2xs block transition">
+                  一般用(OTC)
+                </span>
+              </label>
+            </div>
+
+            <!-- 製薬会社 複数選択プルダウン -->
+            <div class="relative">
+              <button 
+                type="button" 
+                id="companyDropdownBtn" 
+                onclick="toggleCompanyDropdown()" 
+                class="px-3 py-1.5 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-1.5 shadow-2xs">
+                <span id="companyDropdownLabel">製薬会社: 全社</span>
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+
+              <!-- ドロップダウンメニュー -->
+              <div id="companyDropdownMenu" class="dropdown-menu absolute left-0 top-full mt-1 w-64 p-2 hidden">
+                <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 text-[11px]">
+                  <button type="button" onclick="selectAllCompanies()" class="text-emerald-700 hover:underline font-medium">全社選択</button>
+                  <button type="button" onclick="clearAllCompanies()" class="text-slate-500 hover:underline">クリア</button>
+                </div>
+                <div id="companyCheckboxList" class="max-h-56 overflow-y-auto space-y-1 pr-1">
+                  <!-- JSで動的生成 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 剤形 複数選択プルダウン -->
+            <div class="relative">
+              <button 
+                type="button" 
+                id="dosageFormDropdownBtn" 
+                onclick="toggleDosageFormDropdown()" 
+                class="px-3 py-1.5 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-1.5 shadow-2xs">
+                <span id="dosageFormDropdownLabel">剤形: 全て</span>
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+
+              <!-- ドロップダウンメニュー -->
+              <div id="dosageFormDropdownMenu" class="dropdown-menu absolute left-0 top-full mt-1 w-52 p-2 hidden">
+                <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 text-[11px]">
+                  <button type="button" onclick="selectAllDosageForms()" class="text-emerald-700 hover:underline font-medium">全選択</button>
+                  <button type="button" onclick="clearAllDosageForms()" class="text-slate-500 hover:underline">クリア</button>
+                </div>
+                <div id="dosageFormCheckboxList" class="max-h-56 overflow-y-auto space-y-1 pr-1">
+                  <!-- JSで動的生成 -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 右側: リセットボタン ＆ 条件保存ボタン ＆ 件数表示 -->
+          <div class="flex items-center gap-2">
+            <!-- リセットボタン -->
+            <button 
+              type="button" 
+              id="resetFiltersBtn" 
+              onclick="resetAllFilters()" 
+              class="flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 transition shadow-2xs font-medium cursor-pointer" 
+              title="すべての絞り込み条件（キーワード、除外設定、会社、区分、剤形など）を解除して初期状態に戻します">
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>リセット</span>
+            </button>
+
+            <!-- 条件保存ボタン -->
+            <button 
+              type="button" 
+              id="saveFilterBtn" 
+              onclick="saveFilterPreferences()" 
+              class="save-filter-btn" 
+              title="区分・製薬会社・剤形の現在の絞り込み条件を保存します">
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+              <span id="saveFilterBtnText">条件保存</span>
+            </button>
+
+            <div id="resultCount" class="text-xs text-slate-500 font-medium">
+              検索中...
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 五十音順ナビゲーション -->
+        <div class="pt-1 border-t border-slate-100">
+          <div id="gojuonBar" class="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
+            <!-- JSで動的生成 -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ローディング -->
+      <div id="loadingIndicator" class="py-12 text-center text-slate-500 space-y-2">
+        <div class="inline-block animate-spin rounded-full h-5 w-5 border-2 border-emerald-700 border-t-transparent"></div>
+        <p class="text-xs">医薬品データを読み込み中...</p>
+      </div>
+
+      <!-- 検索結果リスト（スリムなカード表示） -->
+      <div id="itemList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <!-- JSで動的生成 -->
+      </div>
+
+      <!-- さらに表示ボタン -->
+      <div id="loadMoreContainer" class="hidden text-center py-4">
+        <button 
+          id="loadMoreBtn" 
+          class="px-5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded border border-slate-300 shadow-2xs transition">
+          <span id="loadMoreText">さらに表示する</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ==========================================
+         2. 処方比較専用ビュー (comparePageView) - 独立ページ表示
+         ========================================== -->
+    <div id="comparePageView" class="hidden space-y-3.5">
+      
+      <!-- パンくず・戻るナビゲーションバー -->
+      <div class="flex items-center justify-between bg-white rounded-lg border border-slate-200 px-4 py-2.5 shadow-2xs">
+        <button 
+          type="button" 
+          onclick="navigateToSearch()" 
+          class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          <span>検索一覧に戻る</span>
+        </button>
+
+        <div class="text-xs text-slate-500 font-medium">
+          各社製剤 配合量・生薬比較
+        </div>
+      </div>
+
+      <!-- 比較コンテンツ本体 -->
+      <div id="comparePageContent" class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-2xs">
+        <!-- JSで動的生成 -->
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 比較モード時 フローティングバー（シンプル・高視認性） -->
+  <div id="compareFloatingBar" class="compare-float-bar hidden">
+    <button 
+      type="button" 
+      id="executeCompareBtn" 
+      onclick="executeCustomCompare()" 
+      class="px-5 py-2.5 rounded-lg bg-emerald-800 text-white font-bold hover:bg-emerald-900 transition shadow-lg flex items-center gap-2.5 cursor-pointer whitespace-nowrap text-sm">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span>選択した商品を比較する</span>
+      <span id="compareSelectedCount" class="bg-emerald-950 text-white px-2 py-0.5 rounded-full text-xs font-mono font-bold whitespace-nowrap">0件</span>
+    </button>
+    <button 
+      type="button" 
+      onclick="toggleCompareMode()" 
+      class="w-9 h-9 rounded-lg bg-white border border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition shadow-md cursor-pointer flex items-center justify-center shrink-0 text-sm font-bold" 
+      title="比較モードを終了">
+      ✕
+    </button>
+  </div>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>日本漢方生薬製剤協会 会員各社 医薬品検索データベース</p>
+    </div>
+  </footer>
+
+  <!-- 詳細モーダル（空改行を除去した清潔な表示） -->
+  <div id="detailModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-3 sm:p-5" onclick="if(event.target===this)closeDetailModal()">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col" id="modalContent">
+      <!-- JSで動的描画 -->
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
