@@ -334,28 +334,43 @@ function updateBookmarkIconsForIndex(idx, key) {
 }
 
 function updateBookmarkCounts() {
+  const btn = document.getElementById('bookmarkCycleBtn');
   const label = document.getElementById('bookmarkCycleLabel');
   const icon = document.getElementById('bookmarkCycleIcon');
   const badge = document.getElementById('bookmarkCycleBadge');
   const filter = STATE.activeBookmarkFilter;
 
-  if (label && icon && badge) {
+  if (icon && badge) {
     if (filter === 'bm1') {
-      label.textContent = 'ブックマーク1';
+      if (label) label.textContent = 'ブックマーク1';
       icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="#f59e0b" stroke="#d97706"/>`;
       badge.classList.remove('hidden');
       badge.textContent = STATE.bookmarks1.size;
-      badge.className = 'text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-100 text-amber-800';
+      badge.className = 'text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-500 text-white leading-none';
+      if (btn) {
+        btn.classList.add('active-bm1');
+        btn.classList.remove('active-bm2');
+        btn.title = `ブックマーク1 表示中 (${STATE.bookmarks1.size}件) - クリックでブックマーク2へ`;
+      }
     } else if (filter === 'bm2') {
-      label.textContent = 'ブックマーク2';
+      if (label) label.textContent = 'ブックマーク2';
       icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="#3b82f6" stroke="#2563eb"/>`;
       badge.classList.remove('hidden');
       badge.textContent = STATE.bookmarks2.size;
-      badge.className = 'text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-blue-100 text-blue-800';
+      badge.className = 'text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-blue-500 text-white leading-none';
+      if (btn) {
+        btn.classList.add('active-bm2');
+        btn.classList.remove('active-bm1');
+        btn.title = `ブックマーク2 表示中 (${STATE.bookmarks2.size}件) - クリックで全件表示へ`;
+      }
     } else {
-      label.textContent = 'すべて';
-      icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="none" stroke="currentColor"/>`;
+      if (label) label.textContent = 'すべて';
+      icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="none" stroke="#475569"/>`;
       badge.classList.add('hidden');
+      if (btn) {
+        btn.classList.remove('active-bm1', 'active-bm2');
+        btn.title = `ブックマーク切り替え（すべて ➔ ブックマーク1 ➔ ブックマーク2）`;
+      }
     }
   }
 }

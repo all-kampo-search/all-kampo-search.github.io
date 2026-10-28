@@ -16,7 +16,7 @@
 
   <!-- ヘッダー -->
   <header class="site-header shadow-xs sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
       <div class="flex items-center space-x-2.5">
         <a href="#/" class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2 hover:opacity-95">
           <span>漢方薬 医薬品検索</span>
@@ -25,8 +25,35 @@
           </span>
         </a>
       </div>
-      <div class="text-xs text-emerald-100 hidden sm:block">
-        日本漢方生薬製剤協会 会員各社
+      <div class="flex items-center gap-2.5">
+        <div class="text-xs text-emerald-100 hidden md:block mr-1">
+          日本漢方生薬製剤協会 会員各社
+        </div>
+
+        <!-- 比較モード切替ボタン -->
+        <button 
+          type="button" 
+          id="compareModeBtn" 
+          onclick="toggleCompareMode()" 
+          class="header-compare-btn" 
+          title="クリックして商品を選択し、比較表を作成します">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span id="compareModeBtnText">比較</span>
+        </button>
+
+        <!-- ブックマーク切り替え（しおりマークのみ・文字なし・クリックで順繰り切替） -->
+        <button 
+          type="button" 
+          id="bookmarkCycleBtn" 
+          onclick="cycleBookmarkFilter()" 
+          class="header-bookmark-btn" 
+          title="ブックマーク切り替え（すべて ➔ ブックマーク1 ➔ ブックマーク2）">
+          <svg id="bookmarkCycleIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+          </svg>
+          <span id="bookmarkCycleLabel" class="hidden">すべて</span>
+          <span id="bookmarkCycleBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+        </button>
       </div>
     </div>
   </header>
@@ -42,61 +69,30 @@
       <!-- 検索 & フィルターエリア -->
       <div class="bg-white rounded-lg border border-slate-200 p-3.5 sm:p-4 space-y-2.5 shadow-2xs">
         
-        <!-- 検索対象切り替えタブ ＆ 右端ツール（比較ボタン・しおり型ブックマーク切り替え） -->
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <!-- 左側: 検索対象 -->
-          <div class="flex items-center gap-1">
-            <span class="text-[11px] font-bold text-slate-500 mr-1">検索対象:</span>
-            <button 
-              type="button" 
-              id="searchTarget-name" 
-              onclick="setSearchTarget('name')" 
-              class="search-target-btn active px-2.5 py-0.5 rounded text-xs">
-              商品名
-            </button>
-            <button 
-              type="button" 
-              id="searchTarget-ingredient" 
-              onclick="setSearchTarget('ingredient')" 
-              class="search-target-btn px-2.5 py-0.5 rounded text-xs">
-              生薬名
-            </button>
-            <button 
-              type="button" 
-              id="searchTarget-efficacy" 
-              onclick="setSearchTarget('efficacy')" 
-              class="search-target-btn px-2.5 py-0.5 rounded text-xs">
-              効能効果
-            </button>
-          </div>
-
-          <!-- 右端: 比較モードボタン ＆ しおり型ブックマーク切り替えボタン -->
-          <div class="flex items-center gap-2">
-            <!-- 比較モード切替ボタン -->
-            <button 
-              type="button" 
-              id="compareModeBtn" 
-              onclick="toggleCompareMode()" 
-              class="compare-mode-btn" 
-              title="クリックして商品を選択し、比較表を作成します">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-              <span id="compareModeBtnText">比較</span>
-            </button>
-
-            <!-- ブックマーク切り替え（参照元準拠: すべて → ブックマーク1 → ブックマーク2） -->
-            <button 
-              type="button" 
-              id="bookmarkCycleBtn" 
-              onclick="cycleBookmarkFilter()" 
-              class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition shadow-2xs font-medium" 
-              title="クリックで ブックマーク1 → ブックマーク2 → すべて を切り替えます">
-              <svg id="bookmarkCycleIcon" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-              </svg>
-              <span id="bookmarkCycleLabel">すべて</span>
-              <span id="bookmarkCycleBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
-            </button>
-          </div>
+        <!-- 検索対象切り替えタブ -->
+        <div class="flex items-center gap-1 text-xs">
+          <span class="text-[11px] font-bold text-slate-500 mr-1">検索対象:</span>
+          <button 
+            type="button" 
+            id="searchTarget-name" 
+            onclick="setSearchTarget('name')" 
+            class="search-target-btn active px-2.5 py-0.5 rounded text-xs">
+            商品名
+          </button>
+          <button 
+            type="button" 
+            id="searchTarget-ingredient" 
+            onclick="setSearchTarget('ingredient')" 
+            class="search-target-btn px-2.5 py-0.5 rounded text-xs">
+            生薬名
+          </button>
+          <button 
+            type="button" 
+            id="searchTarget-efficacy" 
+            onclick="setSearchTarget('efficacy')" 
+            class="search-target-btn px-2.5 py-0.5 rounded text-xs">
+            効能効果
+          </button>
         </div>
 
         <!-- 検索入力窓 -->
