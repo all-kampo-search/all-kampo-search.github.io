@@ -1720,6 +1720,9 @@ function navigateToSearch(updateHash = true) {
 
 // 選択商品によるカスタム比較画面へ遷移
 function openCustomComparePage(selectedItems, updateHash = true) {
+  if (STATE.currentView === 'search') {
+    STATE.lastScrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
+  }
   STATE.customCompareItems = selectedItems;
   STATE.compareFormula = null; // カスタム比較モード
   STATE.currentView = 'compare';
@@ -1742,6 +1745,9 @@ function openCustomComparePage(selectedItems, updateHash = true) {
 
 // 処方比較画面へ遷移
 function openComparePage(encodedFormula, updateHash = true) {
+  if (STATE.currentView === 'search') {
+    STATE.lastScrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
+  }
   const formula = decodeURIComponent(encodedFormula);
   STATE.compareFormula = formula;
   STATE.customCompareItems = []; // 処方比較時はカスタムクリア
@@ -2200,16 +2206,6 @@ function renderComparePageContent() {
                     </td>
                   `;
                 }).join('')}
-              </tr>
-
-              <!-- 生薬一覧見出し -->
-              <tr class="bg-slate-100 font-bold text-slate-800">
-                <td class="compare-header-cell font-bold text-slate-900 bg-slate-200">
-                  生薬一覧
-                </td>
-                <td colspan="${filtered.length}" class="p-1.5 text-[11px] text-slate-600 bg-slate-100">
-                  ▼ 原生薬換算配合量（g）
-                </td>
               </tr>
 
               <!-- 各生薬の分量（単位g統一 ＆ 同量マーカー色分け対応） -->
