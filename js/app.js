@@ -34,7 +34,7 @@ const STATE = {
     precautions: false  // 使用上の注意（初期オフ・新規）
   },
   // 詳細モーダル内生薬ソート順 ('amount': 多い順, 'name': 五十音順)
-  herbSortOrder: 'amount'
+  herbSortOrder: 'name'
 };
 
 // 対象会社定義（日漢協加盟社＋イスクラ産業）
@@ -1413,7 +1413,7 @@ function openDetailPage(item, updateHash = true) {
   }
 
   STATE.activeItem = item;
-  STATE.herbSortOrder = 'amount';
+  STATE.herbSortOrder = 'name';
   STATE.currentView = 'detail';
 
   const mainView = document.getElementById('mainSearchView');
@@ -1567,14 +1567,14 @@ function renderDetailPageContent(item) {
               type="button" 
               id="herbSortBtnAmount" 
               onclick="switchHerbSort('amount')" 
-              class="herb-sort-btn active rounded-l text-[10px] py-0.5 px-2.5">
+              class="herb-sort-btn rounded-l text-[10px] py-0.5 px-2.5">
               多い順
             </button>
             <button 
               type="button" 
               id="herbSortBtnName" 
               onclick="switchHerbSort('name')" 
-              class="herb-sort-btn rounded-r -ml-px text-[10px] py-0.5 px-2.5">
+              class="herb-sort-btn active rounded-r -ml-px text-[10px] py-0.5 px-2.5">
               五十音順
             </button>
           </div>
@@ -1935,7 +1935,7 @@ function renderComparePageContent() {
       });
     }
   });
-  const sortedHerbs = Array.from(allHerbNames);
+  const sortedHerbs = Array.from(allHerbNames).sort((a, b) => a.localeCompare(b, 'ja'));
 
   const showEfficacy = STATE.compareVisibleSections.efficacy;
   const showUsageMethod = STATE.compareVisibleSections.usageMethod;
