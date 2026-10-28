@@ -1,3 +1,17 @@
+
+function cleanField(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/，/g, '、')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join('\n')
+        .trim();
+}
+
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
@@ -459,6 +473,13 @@ async function main() {
         }
         await delay(1000); // 1 sec delay to avoid IP block
     }
+    // 今後追加・変更される全アイテムの空改行を完全除去
+    allItems.forEach(it => {
+        ['efficacy', 'feature', 'description', 'precautions', 'usage'].forEach(f => {
+            if (it[f]) it[f] = cleanField(it[f]);
+        });
+    });
+
     // 既存の全社データを保護して安全にマージ
     let mergedData = allItems;
     const dataPath = path.join(__dirname, '../data.json');

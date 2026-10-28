@@ -108,7 +108,7 @@ function normalizeText(text) {
     .toLowerCase();
 }
 
-// 空改行を完全に除去・整形する関数（カンマ「，」も「、」に置換）
+// 空改行を完全に除去・整形する関数（カンマ「，」も「、」に置換、先頭・末尾の空改行・空白も完全トリム）
 function cleanDisplayText(text) {
   if (!text || typeof text !== 'string') return '';
   return text
@@ -119,7 +119,8 @@ function cleanDisplayText(text) {
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0)
-    .join('\n');
+    .join('\n')
+    .trim();
 }
 
 // 1日服用量の閉じ括弧欠落修復
@@ -1429,9 +1430,7 @@ function openDetailModalDirect(item) {
               効能または効果
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">
-            ${cleanedEfficacy}
-          </div>
+          <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">${cleanedEfficacy}</div>
         </details>
       ` : ''}
 
@@ -1444,9 +1443,7 @@ function openDetailModalDirect(item) {
               製品の特徴
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">
-            ${cleanedFeature}
-          </div>
+          <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">${cleanedFeature}</div>
         </details>
       ` : ''}
 
@@ -1510,9 +1507,7 @@ function openDetailModalDirect(item) {
               使用上の注意
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-600 leading-relaxed border-t border-slate-200 bg-white max-h-56 overflow-y-auto whitespace-pre-line">
-            ${cleanedPrecautions}
-          </div>
+          <div class="p-3 text-xs text-slate-600 leading-relaxed border-t border-slate-200 bg-white max-h-56 overflow-y-auto whitespace-pre-line">${cleanedPrecautions}</div>
         </details>
       ` : ''}
 
