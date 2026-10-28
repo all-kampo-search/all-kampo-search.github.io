@@ -175,7 +175,17 @@ body {
 .compare-table {
   border-collapse: separate !important;
   border-spacing: 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  table-layout: auto !important;
 }
+
+/* 同量生薬マーカー用スタイル（同量が複数ある場合は色分け） */
+.marker-match-0 { background-color: #fef08a !important; color: #713f12 !important; font-weight: bold !important; } /* 黄色系 */
+.marker-match-1 { background-color: #bae6fd !important; color: #0c4a6e !important; font-weight: bold !important; } /* 水色系 */
+.marker-match-2 { background-color: #bbf7d0 !important; color: #14532d !important; font-weight: bold !important; } /* 緑系 */
+.marker-match-3 { background-color: #f5d0fe !important; color: #701a75 !important; font-weight: bold !important; } /* ピンク系 */
+.marker-match-4 { background-color: #fed7aa !important; color: #7c2d12 !important; font-weight: bold !important; } /* オレンジ系 */
 
 .compare-table th, .compare-table td {
   padding: 6px 10px !important;

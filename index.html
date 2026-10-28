@@ -294,6 +294,33 @@
 
     </div>
 
+    <!-- ==========================================
+         3. 商品詳細専用ビュー (detailPageView) - 独立ページ表示
+         ========================================== -->
+    <div id="detailPageView" class="hidden space-y-3.5">
+      
+      <!-- パンくず・戻るナビゲーションバー -->
+      <div class="flex items-center justify-between bg-white rounded-lg border border-slate-200 px-4 py-2.5 shadow-2xs">
+        <button 
+          type="button" 
+          onclick="navigateToSearch()" 
+          class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          <span>検索一覧に戻る</span>
+        </button>
+
+        <div class="text-xs text-slate-500 font-medium">
+          製品詳細・添付文書情報
+        </div>
+      </div>
+
+      <!-- 詳細コンテンツ本体 -->
+      <div id="detailPageContent" class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-2xs">
+        <!-- JSで動的生成 -->
+      </div>
+
+    </div>
+
   </main>
 
   <!-- 比較モード時 フローティングバー（シンプル・高視認性） -->

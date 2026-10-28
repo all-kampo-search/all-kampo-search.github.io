@@ -16,7 +16,8 @@ const STATE = {
   excludeHerb: false, // 生薬除外検索（trueの時、入力生薬を含まない商品を検索）
   activeItem: null,
   compareFormula: null,
-  currentView: 'search', // 'search' | 'compare'
+  currentView: 'search', // 'search' | 'compare' | 'detail'
+  lastScrollPosition: 0, // 一覧画面のスクロール復元位置
   // 比較選択モード
   isCompareMode: false,
   selectedCompareItems: new Set(), // 選択された globalIndex の Set
@@ -121,6 +122,12 @@ function cleanDisplayText(text) {
     .filter(line => line.length > 0)
     .join('\n')
     .trim();
+}
+
+// 生薬名から前後の空白・全角スペース・タブ・インデントを完全除去して左揃えにする
+function cleanHerbName(name) {
+  if (!name || typeof name !== 'string') return '';
+  return name.replace(/^[\s\u3000\u00A0\t]+|[\s\u3000\u00A0\t]+$/g, '').trim();
 }
 
 // 1日服用量の閉じ括弧欠落修復
@@ -568,6 +575,23 @@ function handleHashRouting() {
     if (formula) {
       openComparePage(decodeURIComponent(formula), false);
       return;
+    }
+  }
+
+  if (hash.startsWith('#/detail')) {
+    const params = new URLSearchParams(hash.replace(/^#\/detail\??/, ''));
+    const idx = parseInt(params.get('idx'), 10);
+    if (!isNaN(idx) && STATE.items[idx]) {
+      openDetailPage(STATE.items[idx], false);
+      return;
+    }
+    const name = params.get('name') || '';
+    if (name) {
+      const it = STATE.items.find(x => x.name === name || x.rawName === name);
+      if (it) {
+        openDetailPage(it, false);
+        return;
+      }
     }
   }
   
@@ -1189,41 +1213,102 @@ function renderResults() {
   }
 }
 
-// 詳細モーダル内の構成生薬リスト描画（エキス固定 ＆ 多い順/五十音順ソート ＆ 単位g統一）
+// 単一生薬バーHTMLの生成関数（インデントは削除して左揃え）
+function renderSingleHerbBar(ing, maxAmount) {
+  const pct = maxAmount > 0 ? Math.round(((ing.amount || 0) / maxAmount) * 100) : 0;
+  const amountDisplay = formatHerbAmount(ing.amount, ing.amountStr);
+  const displayName = cleanHerbName(ing.name);
+  return `
+    <div>
+      <div class="flex items-center justify-between text-xs mb-0.5">
+        <span class="font-medium ${ing.isExtract ? 'text-emerald-900 font-bold' : 'text-slate-800'}">
+          ${displayName} ${ing.isExtract ? '(エキス)' : ''}
+        </span>
+        <span class="font-mono text-slate-600">${amountDisplay}</span>
+      </div>
+      <div class="herb-bar-bg">
+        <div class="herb-bar-fill ${ing.isExtract ? 'extract' : ''}" style="width: ${pct}%"></div>
+      </div>
+    </div>
+  `;
+}
+
+// 詳細画面内の構成生薬リスト描画（段ずれ分割・インデント削除・独立ソート対応）
 function renderDetailHerbsHtml(ingredients) {
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
     return `<p class="text-xs text-slate-400">成分情報なし</p>`;
   }
 
-  const extracts = ingredients.filter(x => x.isExtract);
-  let herbs = ingredients.filter(x => !x.isExtract);
+  // 全ての生薬名のインデント（前後の空白・全角スペース・タブ）を完全削除して左揃え
+  const cleanedIngredients = ingredients.map(x => ({
+    ...x,
+    cleanName: cleanHerbName(x.name)
+  }));
 
-  if (STATE.herbSortOrder === 'name') {
-    herbs.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-  } else {
-    herbs.sort((a, b) => (b.amount || 0) - (a.amount || 0));
-  }
+  const extracts = cleanedIngredients.filter(x => x.isExtract);
+  const nonExtracts = cleanedIngredients.filter(x => !x.isExtract);
 
-  const combined = [...extracts, ...herbs];
-  const maxAmount = Math.max(...combined.map(ing => ing.amount || 0), 1);
+  // 生薬末（「末」または「粉」で終わる生薬）と原料生薬の判定
+  const powders = nonExtracts.filter(x => x.cleanName.endsWith('末') || x.cleanName.endsWith('粉'));
+  const rawHerbs = nonExtracts.filter(x => !(x.cleanName.endsWith('末') || x.cleanName.endsWith('粉')));
 
-  return combined.map(ing => {
-    const pct = maxAmount > 0 ? Math.round(((ing.amount || 0) / maxAmount) * 100) : 0;
-    const amountDisplay = formatHerbAmount(ing.amount, ing.amountStr);
+  // 段がずれている（原料生薬 と 生薬末 の両方が存在する場合）
+  const isSplit = (extracts.length > 0 || rawHerbs.length > 0) && powders.length > 0 && rawHerbs.length > 0;
+
+  // ソート用ヘルパー
+  const sortHerbs = (list) => {
+    const arr = [...list];
+    if (STATE.herbSortOrder === 'name') {
+      arr.sort((a, b) => a.cleanName.localeCompare(b.cleanName, 'ja'));
+    } else {
+      arr.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+    }
+    return arr;
+  };
+
+  const maxAmount = Math.max(...cleanedIngredients.map(ing => ing.amount || 0), 1);
+
+  if (isSplit) {
+    // 混ぜずに分割してブロック表示
+    const sortedRaw = sortHerbs(rawHerbs);
+    const sortedPowders = sortHerbs(powders);
+
     return `
-      <div>
-        <div class="flex items-center justify-between text-xs mb-0.5">
-          <span class="font-medium ${ing.isExtract ? 'text-emerald-900 font-bold' : 'text-slate-800'}">
-            ${ing.name} ${ing.isExtract ? '(エキス)' : ''}
-          </span>
-          <span class="font-mono text-slate-600">${amountDisplay}</span>
+      <div class="space-y-4">
+        <!-- 1. エキスおよび原料生薬ブロック -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700 pb-1 border-b border-slate-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <span>${extracts.length > 0 ? 'エキス原料生薬' : '原料生薬'}</span>
+          </div>
+          <div class="space-y-1.5">
+            ${extracts.map(ext => renderSingleHerbBar(ext, maxAmount)).join('')}
+            ${sortedRaw.map(h => renderSingleHerbBar(h, maxAmount)).join('')}
+          </div>
         </div>
-        <div class="herb-bar-bg">
-          <div class="herb-bar-fill ${ing.isExtract ? 'extract' : ''}" style="width: ${pct}%"></div>
+
+        <!-- 2. 生薬末ブロック（段外れ配合成分） -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700 pb-1 border-b border-slate-200">
+            <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+            <span>生薬末（原末配合）</span>
+          </div>
+          <div class="space-y-1.5">
+            ${sortedPowders.map(h => renderSingleHerbBar(h, maxAmount)).join('')}
+          </div>
         </div>
       </div>
     `;
-  }).join('');
+  }
+
+  // 通常処方（分割なし）
+  const sortedHerbs = sortHerbs(nonExtracts);
+  const combined = [...extracts, ...sortedHerbs];
+  return `
+    <div class="space-y-1.5">
+      ${combined.map(ing => renderSingleHerbBar(ing, maxAmount)).join('')}
+    </div>
+  `;
 }
 
 // 生薬ソート順切り替え
@@ -1318,21 +1403,48 @@ function isSingleHerbItem(item) {
   return false;
 }
 
-// 直接アイテムを指定して詳細モーダルを開く
-function openDetailModalDirect(item) {
+// 直接アイテムを指定して商品詳細専用ページを開く（独立ページ切り替え ＆ スクロール位置記録）
+function openDetailPage(item, updateHash = true) {
   if (!item) return;
+
+  // 検索一覧ビューからの遷移時、スクロール位置を確実に記憶
+  if (STATE.currentView === 'search') {
+    STATE.lastScrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
+  }
+
   STATE.activeItem = item;
   STATE.herbSortOrder = 'amount';
-  
+  STATE.currentView = 'detail';
+
+  const mainView = document.getElementById('mainSearchView');
+  const compareView = document.getElementById('comparePageView');
+  const detailView = document.getElementById('detailPageView');
   const modal = document.getElementById('detailModal');
-  const content = document.getElementById('modalContent');
-  if (!modal || !content) return;
-  
+  if (modal) modal.classList.add('hidden');
+
+  if (mainView) mainView.classList.add('hidden');
+  if (compareView) compareView.classList.add('hidden');
+  if (detailView) detailView.classList.remove('hidden');
+
+  const globalIdx = typeof item._globalIndex === 'number' ? item._globalIndex : STATE.items.indexOf(item);
+  if (updateHash) {
+    history.pushState(null, '', `#/detail?idx=${globalIdx}`);
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  renderDetailPageContent(item);
+}
+
+// 商品詳細専用ページのコンテンツ描画
+function renderDetailPageContent(item) {
+  const content = document.getElementById('detailPageContent');
+  if (!content || !item) return;
+
   const isMedical = item.type === 'medical';
   const badgeClass = getCompanyBadgeClass(item.company);
   const dosageForm = item.dosageForm || 'その他';
   const globalIdx = typeof item._globalIndex === 'number' ? item._globalIndex : STATE.items.indexOf(item);
-  
+
   const key = getItemKey(item);
   const isBm1 = STATE.bookmarks1.has(key);
   const isBm2 = STATE.bookmarks2.has(key);
@@ -1346,8 +1458,8 @@ function openDetailModalDirect(item) {
 
   content.innerHTML = `
     <!-- ヘッダー -->
-    <div class="p-3.5 border-b border-slate-200 bg-slate-50 flex items-start justify-between gap-3">
-      <div class="flex-1 min-w-0">
+    <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-start justify-between gap-3 flex-wrap">
+      <div class="flex-1 min-w-[240px]">
         <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
           <span class="px-2 py-0.5 rounded text-xs font-bold border ${badgeClass}">
             ${item.companyName}
@@ -1360,9 +1472,9 @@ function openDetailModalDirect(item) {
           </span>
         </div>
 
-        <!-- 商品名（上段・大きく太字・メイン） ＆ 比較表を見るボタン ＆ しおり型ブックマーク -->
-        <div class="flex items-center justify-between gap-3">
-          <h2 class="text-base font-bold text-slate-900 leading-snug truncate" title="${item.rawName || item.name}">
+        <!-- 商品名 ＆ 比較表を見るボタン ＆ しおり型ブックマーク -->
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h2 class="text-lg font-bold text-slate-900 leading-snug" title="${item.rawName || item.name}">
             ${item.rawName || item.name}
           </h2>
           
@@ -1376,17 +1488,17 @@ function openDetailModalDirect(item) {
               return `
                 <button 
                   type="button" 
-                  onclick="closeDetailModal(); openComparePage('${encodeURIComponent(compareTarget)}')" 
-                  class="px-2.5 py-1 bg-emerald-800 hover:bg-emerald-900 text-white font-medium text-xs rounded shadow-2xs transition cursor-pointer flex items-center gap-1 shrink-0" 
+                  onclick="openComparePage('${encodeURIComponent(compareTarget)}')" 
+                  class="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-medium text-xs rounded shadow-2xs transition cursor-pointer flex items-center gap-1.5 shrink-0" 
                   title="「${compareTarget}」の他社比較表を開く">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                  <span>比較表を見る</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                  <span>他社比較表を見る</span>
                 </button>
               `;
             })()}
 
-            <!-- 詳細モーダル内しおり型ブックマーク（しおり1 ＆ しおり2） -->
-            <div class="flex items-center gap-1 shrink-0 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs">
+            <!-- 詳細画面内しおり型ブックマーク（しおり1 ＆ しおり2） -->
+            <div class="flex items-center gap-1.5 shrink-0 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
               <button 
                 type="button" 
                 onclick="toggleBookmark(${globalIdx}, 1)" 
@@ -1410,46 +1522,42 @@ function openDetailModalDirect(item) {
         </div>
 
         <!-- 小分類 / 処方名（下段・小さめ・落ち着いた色・サブ） -->
-        <p class="text-xs text-slate-500 mt-0.5">${item.subCategory || item.formulaName || ''}</p>
+        <p class="text-xs text-slate-500 mt-1">${item.subCategory || item.formulaName || ''}</p>
       </div>
-      
-      <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-200 transition text-sm cursor-pointer ml-1">
-        ✕
-      </button>
     </div>
     
     <!-- 内容（各項目アコーディオン） -->
-    <div class="p-4 space-y-3 max-h-[75vh] overflow-y-auto text-xs">
+    <div class="p-4 sm:p-5 space-y-3.5 text-xs">
       
       <!-- 1. 効能または効果（デフォルト展開: open） -->
       ${cleanedEfficacy ? `
         <details open class="group bg-slate-50 border border-slate-200 rounded overflow-hidden">
-          <summary class="p-2.5 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
+          <summary class="p-3 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
             <span class="flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               効能または効果
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">${cleanedEfficacy}</div>
+          <div class="p-3.5 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">${cleanedEfficacy}</div>
         </details>
       ` : ''}
 
       <!-- 2. 製品の特徴（添付文書に特徴がある場合のみ表示、無い場合はスキップ・デフォルト最小化） -->
       ${cleanedFeature ? `
         <details class="group bg-slate-50 border border-slate-200 rounded overflow-hidden">
-          <summary class="p-2.5 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
+          <summary class="p-3 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
             <span class="flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               製品の特徴
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">${cleanedFeature}</div>
+          <div class="p-3.5 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white whitespace-pre-line">${cleanedFeature}</div>
         </details>
       ` : ''}
 
-      <!-- 3. 構成生薬・分量（デフォルト展開: open） -->
+      <!-- 3. 構成生薬・分量（デフォルト展開: open ＆ 段ずれ分割・インデント削除対応） -->
       <details open class="group bg-slate-50 border border-slate-200 rounded overflow-hidden">
-        <summary class="p-2.5 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
+        <summary class="p-3 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
           <span class="flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             構成生薬・分量
@@ -1459,19 +1567,19 @@ function openDetailModalDirect(item) {
               type="button" 
               id="herbSortBtnAmount" 
               onclick="switchHerbSort('amount')" 
-              class="herb-sort-btn active rounded-l text-[10px] py-0.5 px-2">
+              class="herb-sort-btn active rounded-l text-[10px] py-0.5 px-2.5">
               多い順
             </button>
             <button 
               type="button" 
               id="herbSortBtnName" 
               onclick="switchHerbSort('name')" 
-              class="herb-sort-btn rounded-r -ml-px text-[10px] py-0.5 px-2">
+              class="herb-sort-btn rounded-r -ml-px text-[10px] py-0.5 px-2.5">
               五十音順
             </button>
           </div>
         </summary>
-        <div class="p-3 text-xs border-t border-slate-200 bg-white">
+        <div class="p-3.5 text-xs border-t border-slate-200 bg-white">
           <div id="detailHerbsContainer" class="space-y-1.5">
             ${renderDetailHerbsHtml(item.ingredients)}
           </div>
@@ -1480,14 +1588,14 @@ function openDetailModalDirect(item) {
 
       <!-- 4. 用法および用量（デフォルト展開: open） -->
       <details open class="group bg-slate-50 border border-slate-200 rounded overflow-hidden">
-        <summary class="p-2.5 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
+        <summary class="p-3 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
           <span class="flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             用法および用量
           </span>
           <span class="font-normal text-[11px] text-slate-500 mr-1 font-mono">1日服用量: ${formattedDailyDose}</span>
         </summary>
-        <div class="p-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white space-y-2">
+        <div class="p-3.5 text-xs text-slate-700 leading-relaxed border-t border-slate-200 bg-white space-y-2.5">
           <div class="flex items-center gap-2">
             <span class="font-bold text-slate-800">1日服用量:</span>
             <span class="font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-900">${formattedDailyDose}</span>
@@ -1501,26 +1609,26 @@ function openDetailModalDirect(item) {
       <!-- 5. 使用上の注意（デフォルト最小化: 閉じた状態） -->
       ${cleanedPrecautions ? `
         <details class="group bg-slate-50 border border-slate-200 rounded overflow-hidden">
-          <summary class="p-2.5 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
+          <summary class="p-3 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
             <span class="flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               使用上の注意
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-600 leading-relaxed border-t border-slate-200 bg-white max-h-56 overflow-y-auto whitespace-pre-line">${cleanedPrecautions}</div>
+          <div class="p-3.5 text-xs text-slate-600 leading-relaxed border-t border-slate-200 bg-white max-h-64 overflow-y-auto whitespace-pre-line">${cleanedPrecautions}</div>
         </details>
       ` : ''}
 
       <!-- 6. 添加物・保管等の注意（デフォルト最小化: 閉じた状態） -->
       ${cleanedAdditivesText ? `
         <details class="group bg-slate-50 border border-slate-200 rounded overflow-hidden">
-          <summary class="p-2.5 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
+          <summary class="p-3 font-bold text-xs text-slate-800 bg-slate-100/80 hover:bg-slate-200/70 cursor-pointer flex items-center justify-between transition select-none list-none">
             <span class="flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               添加物・保管及び取扱い上の注意
             </span>
           </summary>
-          <div class="p-3 text-xs text-slate-600 leading-relaxed border-t border-slate-200 bg-white">
+          <div class="p-3.5 text-xs text-slate-600 leading-relaxed border-t border-slate-200 bg-white">
             ${cleanedAdditivesText}
           </div>
         </details>
@@ -1528,51 +1636,67 @@ function openDetailModalDirect(item) {
 
       <!-- 外部リンク -->
       ${item.url ? `
-        <div class="pt-1 text-right">
-          <a href="${item.url.startsWith('http') ? item.url : 'https://www.kegg.jp/medicus-bin/' + item.url}" target="_blank" rel="noopener noreferrer" class="text-xs text-emerald-800 hover:underline">
-            公式添付文書・製品情報ページを開く ›
+        <div class="pt-2 text-right">
+          <a href="${item.url.startsWith('http') ? item.url : 'https://www.kegg.jp/medicus-bin/' + item.url}" target="_blank" rel="noopener noreferrer" class="text-xs text-emerald-800 hover:underline inline-flex items-center gap-1">
+            <span>公式添付文書・製品情報ページを開く</span>
+            <span>›</span>
           </a>
         </div>
       ` : ''}
     </div>
   `;
-  
-  modal.classList.remove('hidden');
 }
 
-// 直接インデックスから開く
+// 互換用ラッパー（モーダル呼び出しをすべて詳細ページ切り替えへ統一）
+function openDetailModalDirect(item) {
+  openDetailPage(item);
+}
+
 function openDetailModalDirectByIndex(idx) {
   const item = STATE.items[idx];
-  if (item) openDetailModalDirect(item);
+  if (item) openDetailPage(item);
 }
 
-// フィルター後のインデックスから開く
+function openDetailPageByIndex(idx) {
+  const item = STATE.items[idx];
+  if (item) openDetailPage(item);
+}
+
 function openDetailModal(idx) {
   const item = STATE.filteredItems[idx];
-  if (item) openDetailModalDirect(item);
+  if (item) openDetailPage(item);
 }
 
 function closeDetailModal() {
-  const modal = document.getElementById('detailModal');
-  if (modal) modal.classList.add('hidden');
+  navigateToSearch();
 }
 
 // ==========================================================================
 // 処方比較 独立ページ（画面遷移）
 // ==========================================================================
 
-// 検索一覧へ戻る
+// 検索一覧へ戻る（スクロール位置完全復元）
 function navigateToSearch(updateHash = true) {
   STATE.currentView = 'search';
   const mainView = document.getElementById('mainSearchView');
   const compareView = document.getElementById('comparePageView');
+  const detailView = document.getElementById('detailPageView');
+  const modal = document.getElementById('detailModal');
+  if (modal) modal.classList.add('hidden');
+
   if (mainView) mainView.classList.remove('hidden');
   if (compareView) compareView.classList.add('hidden');
+  if (detailView) detailView.classList.add('hidden');
   
   if (updateHash) {
     history.pushState(null, '', '#/');
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // 以前のスクロール位置へ完全復元
+  const savedY = STATE.lastScrollPosition || 0;
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedY, behavior: 'instant' });
+  });
 }
 
 // 選択商品によるカスタム比較画面へ遷移
@@ -1804,7 +1928,10 @@ function renderComparePageContent() {
   filtered.forEach(it => {
     if (Array.isArray(it.ingredients)) {
       it.ingredients.forEach(ing => {
-        if (!ing.isExtract) allHerbNames.add(ing.name);
+        if (!ing.isExtract) {
+          const cName = cleanHerbName(ing.name);
+          if (cName) allHerbNames.add(cName);
+        }
       });
     }
   });
@@ -1958,15 +2085,15 @@ function renderComparePageContent() {
 
     </div>
 
-    <!-- 比較テーブル（border-separate・パディングゼロで左固定stickyが完全に機能） -->
-    <div class="overflow-x-auto w-full p-0">
+    <!-- 比較テーブル（比較対象が少ない時でも横幅を小さく保つ） -->
+    <div class="overflow-x-auto max-w-full p-0">
       ${filtered.length === 0 ? `
         <div class="p-8 text-center text-xs text-slate-500">
           <p class="font-medium">条件に合致する製剤がありません</p>
           <p class="text-[11px] text-slate-400 mt-1">上の「区分」や「製薬会社」の絞り込みを変更してください。</p>
         </div>
       ` : `
-        <table class="compare-table w-full text-xs text-left border-collapse min-w-[650px]">
+        <table class="compare-table text-xs text-left border-collapse">
           <thead>
             <tr class="bg-slate-100 text-slate-700">
               <th class="compare-header-cell text-center font-bold">比較項目</th>
@@ -1983,7 +2110,7 @@ function renderComparePageContent() {
                     <!-- 2〜3行目: 商品名（クリックで該当製品の詳細画面へ100%確実にジャンプ） -->
                     <div 
                       class="compare-row-2-3-name" 
-                      onclick="openDetailModalByIndex(${globalIdx})" 
+                      onclick="openDetailPageByIndex(${globalIdx})" 
                       title="クリックして詳細を表示: ${item.rawName || item.name}">
                       ${item.name}
                     </div>
@@ -2066,21 +2193,51 @@ function renderComparePageContent() {
                 </td>
               </tr>
 
-              <!-- 各生薬の分量（単位g統一） -->
-              ${sortedHerbs.map(herb => `
+              <!-- 各生薬の分量（単位g統一 ＆ 同量マーカー色分け対応） -->
+              ${sortedHerbs.map(herb => {
+                // この生薬における各商品の配合量数値を抽出
+                const amounts = filtered.map(it => {
+                  const ing = (it.ingredients || []).find(x => cleanHerbName(x.name) === herb);
+                  return (ing && typeof ing.amount === 'number' && ing.amount > 0) ? ing.amount : null;
+                });
+
+                // 数値ごとの登場回数を集計
+                const countMap = {};
+                amounts.forEach(amt => {
+                  if (amt !== null) countMap[amt] = (countMap[amt] || 0) + 1;
+                });
+
+                // 2社以上で一致する数値（同量）のみを抽出し、大きい順にソート
+                const duplicateAmts = Object.keys(countMap)
+                  .filter(amt => countMap[amt] >= 2)
+                  .map(Number)
+                  .sort((a, b) => b - a);
+
+                return `
                 <tr class="hover:bg-slate-50">
                   <td class="compare-header-cell font-medium text-slate-800">${herb}</td>
                   ${filtered.map(it => {
-                    const ing = (it.ingredients || []).find(x => x.name === herb);
+                    const ing = (it.ingredients || []).find(x => cleanHerbName(x.name) === herb);
                     const herbDisplay = ing ? formatHerbAmount(ing.amount, ing.amountStr) : '-';
+                    const amt = (ing && typeof ing.amount === 'number' && ing.amount > 0) ? ing.amount : null;
+
+                    let markerClass = '';
+                    if (amt !== null) {
+                      const matchIdx = duplicateAmts.indexOf(amt);
+                      if (matchIdx !== -1) {
+                        markerClass = `marker-match-${matchIdx % 5}`;
+                      }
+                    }
+
                     return `
-                      <td class="text-center font-mono bg-white ${ing ? 'font-bold text-slate-800' : 'text-slate-300'}">
+                      <td class="text-center font-mono ${markerClass ? markerClass : (ing ? 'font-bold text-slate-800 bg-white' : 'text-slate-300 bg-white')}">
                         ${herbDisplay}
                       </td>
                     `;
                   }).join('')}
                 </tr>
-              `).join('')}
+                `;
+              }).join('')}
             ` : ''}
 
             <!-- 添加物（チェック時のみ表示） -->
