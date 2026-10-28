@@ -139,31 +139,51 @@ function _A(table, $) {
 
 function Ey(n) {
     const r = [];
-    let l = n.replace(/\n/g, " ").replace(/\r/g, "").replace(/\s+/g, " ").trim();
-    const s = l.match(/((?:水製乾燥|水製|乾燥)エキス)\s*(\d+\.?\d*)\s*g/) || l.match(/([^　\s,、。]*エキス)\s*(\d+\.?\d*)\s*g/);
-    if (s) {
-        let d = s[1].replace(/^日局/, "").trim();
-        d = d.replace(/^.*?((?:水製乾燥|水製|乾燥)?エキス)$/, "$1");
-        if (d && !d.includes("ゼラチン")) {
-            d = d.replace(/[（(].*/g, "").trim();
-            r.push({ name: d, amount: parseFloat(s[2]), amountStr: `${s[2]}g`, isExtract: true });
+    if (!n) return r;
+    let l = n.replace(/\r\n/g, " ").replace(/[\r\n]/g, " ").replace(/[\s\u3000]+/g, " ").trim();
+
+    // 1. エキス（水製乾燥エキス、乾燥エキス等、mgまたはg）
+    const extMatch = l.match(/((?:水製乾燥|乾燥|水製)?エキス)\s*(\d+(?:\.\d+)?)\s*(mg|g)/i) || 
+                     l.match(/([^　\s,、。]*エキス)\s*(\d+(?:\.\d+)?)\s*(mg|g)/i);
+    if (extMatch) {
+        let name = extMatch[1].replace(/^日局/, "").trim();
+        name = name.replace(/^.*?((?:水製乾燥|水製|乾燥)?エキス)$/, "$1");
+        if (name && !name.includes("ゼラチン")) {
+            name = name.replace(/[（(].*/g, "").trim();
+            let amt = parseFloat(extMatch[2]);
+            if (extMatch[3].toLowerCase() === 'mg') {
+                amt = +(amt / 1000).toFixed(4);
+            }
+            r.push({ name: name, amount: amt, amountStr: `${amt}g`, isExtract: true });
         }
     }
-    const o = /日局([ァ-ヶー一-龯]+(?:\d+)?(?:（[^）]*）)?)\s+(\d+\.?\d*)\s*g/g;
+
+    // 2. 「日局」が付く生薬（スペースの有無、全角スペース、mg/g対応）
+    const o = /日局\s*([ァ-ヶー一-龯]+(?:\d+)?(?:（[^）]*）)?)\s*(\d+(?:\.\d+)?)\s*(mg|g)/gi;
     let f;
     while ((f = o.exec(l)) !== null) {
         let d = f[1].trim();
         d = d.replace(/[（(].*/g, "").trim();
-        r.push({ name: d, amount: parseFloat(f[2]), amountStr: `${f[2]}g`, isExtract: false });
+        let amt = parseFloat(f[2]);
+        if (f[3].toLowerCase() === 'mg') {
+            amt = +(amt / 1000).toFixed(4);
+        }
+        r.push({ name: d, amount: amt, amountStr: `${amt}g`, isExtract: false });
     }
+
+    // 3. 日局が付いていない生薬
     if (r.filter(x => !x.isExtract).length === 0) {
-        const d2 = /([ァ-ヶー一-龯]{2,})\s+(\d+\.?\d*)\s*g/g;
+        const d2 = /(?:^|[\s,、。]+)([ァ-ヶー一-龯]{2,}(?:（[^）]*）)?)\s*(\d+(?:\.\d+)?)\s*(mg|g)/gi;
         let f2;
         while ((f2 = d2.exec(l)) !== null) {
             let d3 = f2[1].trim();
-            if (d3 !== "水製エキス" && d3 !== "乾燥エキス" && !d3.includes("ゼラチン")) {
+            if (d3 !== "水製エキス" && d3 !== "乾燥エキス" && d3 !== "水製乾燥エキス" && !d3.includes("ゼラチン") && !d3.includes("添加物") && !d3.includes("日局")) {
                 d3 = d3.replace(/[（(].*/g, "").trim();
-                r.push({ name: d3, amount: parseFloat(f2[2]), amountStr: `${f2[2]}g`, isExtract: false });
+                let amt = parseFloat(f2[2]);
+                if (f2[3].toLowerCase() === 'mg') {
+                    amt = +(amt / 1000).toFixed(4);
+                }
+                r.push({ name: d3, amount: amt, amountStr: `${amt}g`, isExtract: false });
             }
         }
     }
@@ -248,10 +268,12 @@ async function fetchDetails(url, type) {
                 if (r.ingredients.length === 0) {
                     $2("table").each((_, o) => {
                         $2(o).find("tr").each((_, tr) => {
-                            const th = $2(tr).find("th").text().trim();
-                            const td = $2(tr).find("td");
-                            if (th === "有効成分") {
-                                r.ingredients = Ey(td.text() || "");
+                            const cells = $2(tr).find("th, td");
+                            if (cells.length >= 2) {
+                                const headerText = $2(cells[0]).text().trim();
+                                if (headerText === "有効成分" || headerText.includes("成分及び分量") || headerText.includes("成分・分量")) {
+                                    r.ingredients = Ey($2(cells[1]).text() || "");
+                                }
                             }
                         });
                     });
