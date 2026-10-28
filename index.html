@@ -25,11 +25,7 @@
           </span>
         </a>
       </div>
-      <div class="flex items-center gap-2.5">
-        <div class="text-xs text-emerald-100 hidden md:block mr-1">
-          日本漢方生薬製剤協会 会員各社
-        </div>
-
+      <div class="flex items-center gap-2">
         <!-- 比較モード切替ボタン -->
         <button 
           type="button" 
@@ -37,8 +33,8 @@
           onclick="toggleCompareMode()" 
           class="header-compare-btn" 
           title="クリックして商品を選択し、比較表を作成します">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-          <span id="compareModeBtnText">比較</span>
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span id="compareModeBtnText" class="text-[10px] leading-none font-bold">比較</span>
         </button>
 
         <!-- ブックマーク切り替え（しおりマークのみ・文字なし・クリックで順繰り切替） -->
@@ -48,11 +44,11 @@
           onclick="cycleBookmarkFilter()" 
           class="header-bookmark-btn" 
           title="ブックマーク切り替え（すべて ➔ ブックマーク1 ➔ ブックマーク2）">
-          <svg id="bookmarkCycleIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg id="bookmarkCycleIcon" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
           </svg>
           <span id="bookmarkCycleLabel" class="hidden">すべて</span>
-          <span id="bookmarkCycleBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+          <span id="bookmarkCycleBadge" class="hidden absolute -top-1.5 -right-1.5 text-[9px] min-w-[15px] h-[15px] px-1 rounded-full font-bold flex items-center justify-center shadow-xs">0</span>
         </button>
       </div>
     </div>
@@ -131,26 +127,16 @@
         <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1.5 border-t border-slate-100 text-xs">
           
           <div class="flex flex-wrap items-center gap-2">
-            <!-- 区分トグル -->
-            <div class="flex items-center space-x-1 bg-slate-100 p-0.5 rounded border border-slate-200">
-              <label class="cursor-pointer">
-                <input type="radio" name="drugType" value="all" checked class="peer sr-only">
-                <span class="px-2.5 py-1 rounded text-slate-700 peer-checked:bg-white peer-checked:text-emerald-800 peer-checked:font-bold peer-checked:shadow-2xs block transition">
-                  すべて
-                </span>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="drugType" value="medical" class="peer sr-only">
-                <span class="px-2.5 py-1 rounded text-slate-700 peer-checked:bg-white peer-checked:text-emerald-800 peer-checked:font-bold peer-checked:shadow-2xs block transition">
-                  医療用
-                </span>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="drugType" value="otc" class="peer sr-only">
-                <span class="px-2.5 py-1 rounded text-slate-700 peer-checked:bg-white peer-checked:text-emerald-800 peer-checked:font-bold peer-checked:shadow-2xs block transition">
-                  一般用(OTC)
-                </span>
-              </label>
+            <!-- 区分プルダウン -->
+            <div class="relative">
+              <select 
+                id="drugTypeSelect" 
+                name="drugType"
+                class="px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium text-xs shadow-2xs outline-none focus:ring-1 focus:ring-emerald-700 focus:border-emerald-700 cursor-pointer">
+                <option value="all" selected>区分: すべて</option>
+                <option value="medical">区分: 医療用</option>
+                <option value="otc">区分: 一般用(OTC)</option>
+              </select>
             </div>
 
             <!-- 製薬会社 複数選択プルダウン -->
@@ -340,9 +326,13 @@
   </div>
 
   <!-- フッター -->
-  <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500 mt-auto">
-    <div class="max-w-7xl mx-auto px-4">
-      <p>日本漢方生薬製剤協会 会員各社 医薬品検索データベース</p>
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-4xl mx-auto px-4 space-y-2">
+      <div class="text-[11px] text-slate-500 leading-relaxed space-y-1">
+        <p>本サイトは <a href="https://www.kegg.jp/kegg/medicus/" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline font-medium inline-flex items-center gap-0.5">KEGG MEDICUS</a> のデータを参照しています。 すでに販売終了した商品が表示されたり、新しく発売された商品がまだ反映されていない場合があります。 最新・正確な情報は各製品の添付文書または各企業の公式サイトをご確認ください。</p>
+        <p class="text-slate-400">※当サイトは非公式のものであり、各企業・団体とは一切関係ありません。</p>
+      </div>
+      <p class="pt-1.5 border-t border-slate-100 text-slate-400 text-[11px]">日本漢方生薬製剤協会 会員各社 医薬品検索データベース</p>
     </div>
   </footer>
 

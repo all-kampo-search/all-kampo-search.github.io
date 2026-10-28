@@ -346,7 +346,7 @@ function updateBookmarkCounts() {
       icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="#f59e0b" stroke="#d97706"/>`;
       badge.classList.remove('hidden');
       badge.textContent = STATE.bookmarks1.size;
-      badge.className = 'text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-500 text-white leading-none';
+      badge.className = 'absolute -top-1.5 -right-1.5 text-[9px] min-w-[15px] h-[15px] px-1 rounded-full font-bold flex items-center justify-center shadow-xs bg-amber-500 text-white leading-none';
       if (btn) {
         btn.classList.add('active-bm1');
         btn.classList.remove('active-bm2');
@@ -357,7 +357,7 @@ function updateBookmarkCounts() {
       icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="#3b82f6" stroke="#2563eb"/>`;
       badge.classList.remove('hidden');
       badge.textContent = STATE.bookmarks2.size;
-      badge.className = 'text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-blue-500 text-white leading-none';
+      badge.className = 'absolute -top-1.5 -right-1.5 text-[9px] min-w-[15px] h-[15px] px-1 rounded-full font-bold flex items-center justify-center shadow-xs bg-blue-500 text-white leading-none';
       if (btn) {
         btn.classList.add('active-bm2');
         btn.classList.remove('active-bm1');
@@ -509,6 +509,8 @@ function loadFilterPreferences() {
     
     if (prefs.activeType) {
       STATE.activeType = prefs.activeType;
+      const typeSelect = document.getElementById('drugTypeSelect');
+      if (typeSelect) typeSelect.value = prefs.activeType;
       const radio = document.querySelector(`input[name="drugType"][value="${prefs.activeType}"]`);
       if (radio) radio.checked = true;
     }
@@ -658,6 +660,8 @@ function resetAllFilters() {
 
   // 4. 医薬品区分を「すべて(全件)」に
   STATE.activeType = 'all';
+  const typeSelect = document.getElementById('drugTypeSelect');
+  if (typeSelect) typeSelect.value = 'all';
   const typeRadios = document.querySelectorAll('input[name="drugType"]');
   typeRadios.forEach(r => {
     if (r.value === 'all') r.checked = true;
@@ -2338,6 +2342,15 @@ function setupEventListeners() {
     searchInput.addEventListener('input', (e) => {
       STATE.searchQuery = e.target.value;
       updateClearButtonVisibility();
+      STATE.displayCount = 36;
+      applyFilterAndSearch();
+    });
+  }
+
+  const typeSelect = document.getElementById('drugTypeSelect');
+  if (typeSelect) {
+    typeSelect.addEventListener('change', (e) => {
+      STATE.activeType = e.target.value;
       STATE.displayCount = 36;
       applyFilterAndSearch();
     });

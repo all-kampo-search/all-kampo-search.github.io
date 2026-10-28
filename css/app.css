@@ -36,12 +36,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
+  height: 28px;
+  padding: 0 9px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   background-color: #ffffff;
   color: #065f46;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -53,39 +54,43 @@ body {
   background-color: #f0fdf4;
   border-color: #ffffff;
   color: #047857;
-  transform: translateY(-1px);
 }
 
+/* 比較モードON（押された時）: パッと目立つ鮮やかなオレンジに変色 */
 .header-compare-btn.active,
 .compare-mode-btn.active {
-  background-color: #064e3b;
-  color: #a7f3d0;
-  border-color: #34d399;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+  background-color: #f59e0b !important;
+  color: #ffffff !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45) !important;
 }
 
-/* ヘッダー内 ブックマーク切り替えボタン（しおりマークのみ・文字なし） */
+/* ヘッダー内 ブックマーク切り替えボタン（しおりマークのみ・幅固定・位置完全不変） */
 .header-bookmark-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  width: 32px;
   min-width: 32px;
+  max-width: 32px;
   height: 28px;
-  padding: 0 8px;
+  min-height: 28px;
+  max-height: 28px;
+  padding: 0;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   background-color: #ffffff;
   color: #475569;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-  transition: all 0.15s ease-in-out;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .header-bookmark-btn:hover {
   background-color: #f8fafc;
   border-color: #ffffff;
-  transform: translateY(-1px);
 }
 
 .header-bookmark-btn.active-bm1 {
@@ -169,32 +174,6 @@ body {
   box-shadow: 0 0 0 1px #059669, 0 4px 6px -1px rgba(5, 150, 105, 0.15) !important;
 }
 
-/* 比較モードトグルボタン */
-.compare-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  border: 1px solid var(--border-light);
-  background-color: #ffffff;
-  color: #475569;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-}
-
-.compare-mode-btn:hover {
-  background-color: #f8fafc;
-  border-color: #94a3b8;
-}
-
-.compare-mode-btn.active {
-  background-color: #065f46;
-  color: #ffffff;
-  border-color: #065f46;
-}
 
 /* 画面下部固定フローティング比較バー（高視認性クリーンデザイン・折り返し防止） */
 .compare-float-bar {
