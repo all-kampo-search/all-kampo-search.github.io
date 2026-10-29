@@ -819,8 +819,8 @@ function renderCompanyDropdown() {
     if (count === 0) return '';
     const isChecked = STATE.selectedCompanies.has(c.id);
     return `
-      <label class="flex items-center justify-between text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
-        <div class="flex items-center gap-2">
+      <label class="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
+        <div class="flex items-center gap-1.5">
           <input 
             type="checkbox" 
             value="${c.id}" 
@@ -897,8 +897,8 @@ function renderDosageFormDropdown() {
     if (count === 0) return '';
     const isChecked = STATE.selectedDosageForms.has(form);
     return `
-      <label class="flex items-center justify-between text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
-        <div class="flex items-center gap-2">
+      <label class="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
+        <div class="flex items-center gap-1.5">
           <input 
             type="checkbox" 
             value="${form}" 
