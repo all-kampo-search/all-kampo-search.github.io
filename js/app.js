@@ -2490,6 +2490,7 @@ function openUpdateHistoryModal() {
   }
 
   modal.classList.remove('hidden');
+  modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
 
@@ -2497,8 +2498,13 @@ function closeUpdateHistoryModal() {
   const modal = document.getElementById('updateHistoryModal');
   if (modal) {
     modal.classList.add('hidden');
+    modal.style.display = 'none';
     document.body.style.overflow = '';
   }
 }
+
+// グローバルスコープへ明示的に公開
+window.openUpdateHistoryModal = openUpdateHistoryModal;
+window.closeUpdateHistoryModal = closeUpdateHistoryModal;
 
 document.addEventListener('DOMContentLoaded', initApp);
