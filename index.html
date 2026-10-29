@@ -333,9 +333,37 @@
         <p class="text-slate-400">すでに販売終了した商品が表示されたり、新しく発売された商品がまだ反映されていない場合があります。<br class="hidden sm:inline">最新・正確な情報は各製品の添付文書または各企業の公式サイトをご確認ください。</p>
         <p class="text-slate-400">※当サイトは非公式のものであり、各企業・団体とは一切関係ありません。</p>
       </div>
+      <div class="pt-2">
+        <button 
+          type="button" 
+          onclick="openUpdateHistoryModal()" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 transition text-[11px] font-medium cursor-pointer shadow-2xs">
+          <span>📋</span>
+          <span>最近の更新履歴・修正内容を確認</span>
+        </button>
+      </div>
       <p class="pt-1.5 border-t border-slate-100 text-slate-400 text-[11px]">日本漢方生薬製剤協会 会員各社 医薬品検索データベース</p>
     </div>
   </footer>
+
+  <!-- 更新履歴モーダル -->
+  <div id="updateHistoryModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-3 sm:p-5" onclick="if(event.target===this)closeUpdateHistoryModal()">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-slate-200">
+      <div class="px-5 py-3.5 bg-slate-800 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📋</span>
+          <h3 class="font-bold text-sm sm:text-base">更新履歴・データ修正内容</h3>
+        </div>
+        <button type="button" onclick="closeUpdateHistoryModal()" class="text-slate-400 hover:text-white transition text-lg p-1 rounded hover:bg-slate-700 leading-none cursor-pointer" title="閉じる">✕</button>
+      </div>
+      <div id="updateHistoryModalBody" class="p-5 overflow-y-auto space-y-5 text-slate-700 text-xs sm:text-sm">
+        <!-- JSで動的描画 -->
+      </div>
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+        <button type="button" onclick="closeUpdateHistoryModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded text-xs transition cursor-pointer">閉じる</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 詳細モーダル（空改行を除去した清潔な表示） -->
   <div id="detailModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-3 sm:p-5" onclick="if(event.target===this)closeDetailModal()">

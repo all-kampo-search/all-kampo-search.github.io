@@ -2416,8 +2416,89 @@ function setupEventListeners() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDetailModal();
+      closeUpdateHistoryModal();
     }
   });
+}
+
+
+// 更新履歴モーダルの開閉と描画
+function openUpdateHistoryModal() {
+  const modal = document.getElementById('updateHistoryModal');
+  const body = document.getElementById('updateHistoryModalBody');
+  if (!modal || !body) return;
+
+  const history = (typeof kampoData !== 'undefined' && kampoData.updateHistory) ? kampoData.updateHistory : [];
+  
+  if (history.length === 0) {
+    body.innerHTML = `
+      <div class="text-center py-8 text-slate-400">
+        <p class="text-sm">更新履歴データはありません。</p>
+      </div>
+    `;
+  } else {
+    body.innerHTML = history.map((entry, idx) => {
+      const typeBadge = entry.type === 'audit_repair'
+        ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">データ監査・修復</span>'
+        : entry.type === 'daily_auto_update'
+        ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">定期巡回更新</span>'
+        : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">公式同期</span>';
+
+      let detailsHtml = '';
+      if (Array.isArray(entry.details) && entry.details.length > 0) {
+        detailsHtml = `
+          <div class="mt-2.5 space-y-2 pt-2 border-t border-slate-100">
+            ${entry.details.map(d => `
+              <div class="bg-slate-50 rounded p-2.5 border border-slate-200/70">
+                <div class="font-bold text-slate-800 text-xs mb-1.5 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block"></span>
+                  <span>${escapeHtml(d.category)}</span>
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-slate-600 text-xs">
+                  ${(d.items || []).map(it => `<li class="leading-relaxed">${escapeHtml(it)}</li>`).join('')}
+                </ul>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        const addedHtml = (entry.added && entry.added.length > 0)
+          ? `<div class="mt-2 bg-emerald-50 border border-emerald-200 rounded p-2 text-xs">
+               <span class="font-bold text-emerald-800">新規追加商品:</span> ${entry.added.map(a => escapeHtml(a.name || a)).join('、')}
+             </div>` : '';
+        const updatedHtml = (entry.updated && entry.updated.length > 0)
+          ? `<div class="mt-2 bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+               <span class="font-bold text-blue-800">情報改訂商品:</span> ${entry.updated.map(u => escapeHtml(u.name || u)).join('、')}
+             </div>` : '';
+        detailsHtml = addedHtml + updatedHtml;
+      }
+
+      return `
+        <div class="p-4 rounded-lg border border-slate-200 hover:border-slate-300 transition bg-white shadow-2xs">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-slate-500 text-xs">${escapeHtml(entry.date)}</span>
+              ${typeBadge}
+            </div>
+          </div>
+          <h4 class="font-bold text-slate-900 text-sm mb-1">${escapeHtml(entry.title)}</h4>
+          <p class="text-slate-600 text-xs leading-relaxed">${escapeHtml(entry.summary || '')}</p>
+          ${detailsHtml}
+        </div>
+      `;
+    }).join('');
+  }
+
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeUpdateHistoryModal() {
+  const modal = document.getElementById('updateHistoryModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
