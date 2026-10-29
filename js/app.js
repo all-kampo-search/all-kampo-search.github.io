@@ -1121,6 +1121,22 @@ function applyFilterAndSearch() {
     return true;
   });
 
+    // 厳格な処方名五十音順ソート（第一: 処方名純粋ひらがな、第二: 区分、第三: 商品名）
+  STATE.filteredItems.sort((a, b) => {
+    const k1 = a.subCategorySortKey || '';
+    const k2 = b.subCategorySortKey || '';
+    const cmp = k1.localeCompare(k2, 'ja');
+    if (cmp !== 0) return cmp;
+
+    if (a.type !== b.type) {
+      return a.type === 'medical' ? -1 : 1;
+    }
+
+    const n1 = a.sortKey || a.name || '';
+    const n2 = b.sortKey || b.name || '';
+    return n1.localeCompare(n2, 'ja');
+  });
+
   renderResults();
 }
 
