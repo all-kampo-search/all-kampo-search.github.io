@@ -2422,6 +2422,17 @@ function setupEventListeners() {
 }
 
 
+// HTMLエスケープヘルパー関数
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // 更新履歴モーダルの開閉と描画
 function openUpdateHistoryModal() {
   const modal = document.getElementById('updateHistoryModal');
