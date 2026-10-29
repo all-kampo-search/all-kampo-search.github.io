@@ -819,18 +819,16 @@ function renderCompanyDropdown() {
     if (count === 0) return '';
     const isChecked = STATE.selectedCompanies.has(c.id);
     return `
-      <label class="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
-        <div class="flex items-center gap-1.5">
-          <input 
-            type="checkbox" 
-            value="${c.id}" 
-            ${isChecked ? 'checked' : ''} 
-            onchange="onCompanyCheckChange(this)"
-            class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-          >
-          <span class="text-slate-800">${c.name}</span>
-        </div>
-        <span class="text-[10px] text-slate-400 font-mono">${count}</span>
+      <label class="flex items-center text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
+        <input 
+          type="checkbox" 
+          value="${c.id}" 
+          ${isChecked ? 'checked' : ''} 
+          onchange="onCompanyCheckChange(this)"
+          class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 shrink-0"
+        >
+        <span class="text-slate-800 ml-1.5 inline-block w-[114px] truncate">${c.name}</span>
+        <span class="text-[10px] text-slate-400 font-mono text-right w-[28px] shrink-0">${count}</span>
       </label>
     `;
   }).join('');
@@ -897,18 +895,16 @@ function renderDosageFormDropdown() {
     if (count === 0) return '';
     const isChecked = STATE.selectedDosageForms.has(form);
     return `
-      <label class="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
-        <div class="flex items-center gap-1.5">
-          <input 
-            type="checkbox" 
-            value="${form}" 
-            ${isChecked ? 'checked' : ''} 
-            onchange="onDosageFormCheckChange(this)"
-            class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-          >
-          <span class="text-slate-800">${form}</span>
-        </div>
-        <span class="text-[10px] text-slate-400 font-mono">${count}</span>
+      <label class="flex items-center text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
+        <input 
+          type="checkbox" 
+          value="${form}" 
+          ${isChecked ? 'checked' : ''} 
+          onchange="onDosageFormCheckChange(this)"
+          class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 shrink-0"
+        >
+        <span class="text-slate-800 ml-1.5 inline-block w-[68px] truncate">${form}</span>
+        <span class="text-[10px] text-slate-400 font-mono text-right w-[32px] shrink-0">${count}</span>
       </label>
     `;
   }).join('');
