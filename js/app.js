@@ -25,6 +25,7 @@ const STATE = {
   // 比較画面内フィルター
   compareSelectedCompanies: new Set(),
   compareSelectedTypes: new Set(['medical', 'otc']),
+  compareSelectedDosageForms: new Set(), // 空なら全剤形
   compareVisibleSections: {
     efficacy: false,     // 効能効果（初期オフ）
     usageMethod: false,  // 用法（初期オフ・新規）
@@ -130,10 +131,12 @@ function cleanHerbName(name) {
   return name.replace(/^[\s\u3000\u00A0\t]+|[\s\u3000\u00A0\t]+$/g, '').trim();
 }
 
-// 1日服用量の閉じ括弧欠落修復
+// 1日服用量の整形（末尾の「し」除去および閉じ括弧修復）
 function formatDailyDose(dailyDose) {
   if (!dailyDose || typeof dailyDose !== 'string') return '-';
   let dose = dailyDose.trim();
+  // 「〜に分割し」「〜し」の「し」を除去
+  dose = dose.replace(/に分割し$/, 'に分割').replace(/し$/, '');
   const openCountHalf = (dose.match(/\(/g) || []).length;
   const closeCountHalf = (dose.match(/\)/g) || []).length;
   if (openCountHalf > closeCountHalf) {
@@ -965,6 +968,15 @@ document.addEventListener('click', (e) => {
   if (dosageBtn && dosageMenu && !dosageBtn.contains(e.target) && !dosageMenu.contains(e.target)) {
     dosageMenu.classList.add('hidden');
   }
+
+  // 比較画面内プルダウンのクローズ制御
+  ['compareType', 'compareCompany', 'compareDosage', 'compareSection'].forEach(prefix => {
+    const btn = document.getElementById(prefix + 'DropdownBtn');
+    const menu = document.getElementById(prefix + 'DropdownMenu');
+    if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
 });
 
 // 五十音バー描画
@@ -1505,72 +1517,65 @@ function renderDetailPageContent(item) {
   const formattedDailyDose = formatDailyDose(item.dailyDose);
 
   content.innerHTML = `
-    <!-- ヘッダー -->
-    <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-start justify-between gap-3 flex-wrap">
-      <div class="flex-1 min-w-[240px]">
-        <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
-          <span class="px-2 py-0.5 rounded text-xs font-bold border ${badgeClass}">
+    <!-- ヘッダー（シンプル・省スペース化） -->
+    <div class="py-2.5 px-3.5 border-b border-slate-200 bg-slate-50/90 flex items-center justify-between gap-2.5 flex-wrap">
+      <div class="flex-1 min-w-[200px]">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="px-1.5 py-0.5 rounded text-[11px] font-bold border ${badgeClass}">
             ${item.companyName}
           </span>
-          <span class="px-2 py-0.5 rounded text-xs font-medium ${isMedical ? 'bg-slate-700 text-white border border-slate-800' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
-            ${isMedical ? '医療用医薬品' : '一般用医薬品(OTC)'}
+          <span class="px-1.5 py-0.5 rounded text-[11px] font-medium ${isMedical ? 'bg-slate-700 text-white border border-slate-800' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
+            ${isMedical ? '医療用' : '一般用(OTC)'}
           </span>
-          <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          <span class="px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
             ${dosageForm}
           </span>
-        </div>
-
-        <!-- 商品名 ＆ 比較表を見るボタン ＆ しおり型ブックマーク -->
-        <div class="flex items-center justify-between gap-3 flex-wrap">
-          <h2 class="text-lg font-bold text-slate-900 leading-snug" title="${item.rawName || item.name}">
+          <h2 class="text-base font-bold text-slate-900 ml-1 leading-normal inline" title="${item.rawName || item.name}">
             ${item.rawName || item.name}
           </h2>
-          
-          <!-- 右側ツール群: 「比較表を見る」ボタン ＆ ブックマーク2つ -->
-          <div class="flex items-center gap-2 shrink-0">
-            <!-- 比較表を見るボタン（単味生薬等は自動非表示） -->
-            ${(() => {
-              if (isSingleHerbItem(item)) return '';
-              const compareTarget = (!isGenericCategory(item.subCategory) && item.subCategory) ? item.subCategory : item.name;
-              if (isGenericCategory(compareTarget)) return '';
-              return `
-                <button 
-                  type="button" 
-                  onclick="openComparePage('${encodeURIComponent(compareTarget)}')" 
-                  class="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-medium text-xs rounded shadow-2xs transition cursor-pointer flex items-center gap-1.5 shrink-0" 
-                  title="「${compareTarget}」の他社比較表を開く">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                  <span>他社比較表を見る</span>
-                </button>
-              `;
-            })()}
-
-            <!-- 詳細画面内しおり型ブックマーク（しおり1 ＆ しおり2） -->
-            <div class="flex items-center gap-1.5 shrink-0 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
-              <button 
-                type="button" 
-                onclick="toggleBookmark(${globalIdx}, 1)" 
-                class="p-0.5 hover:bg-slate-100 rounded text-slate-400 hover:text-amber-500 transition cursor-pointer" 
-                title="ブックマーク1に追加/解除">
-                <svg id="modalBmIcon-1-${globalIdx}" class="w-4 h-4 transition" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="${isBm1 ? '#f59e0b' : 'none'}" stroke="${isBm1 ? '#d97706' : '#94a3b8'}"/>
-                </svg>
-              </button>
-              <button 
-                type="button" 
-                onclick="toggleBookmark(${globalIdx}, 2)" 
-                class="p-0.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-500 transition cursor-pointer" 
-                title="ブックマーク2に追加/解除">
-                <svg id="modalBmIcon-2-${globalIdx}" class="w-4 h-4 transition" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="${isBm2 ? '#3b82f6' : 'none'}" stroke="${isBm2 ? '#2563eb' : '#94a3b8'}"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+          ${(item.subCategory && item.subCategory !== item.name) ? `<span class="text-xs text-slate-500 font-normal ml-1">(${item.subCategory})</span>` : ''}
         </div>
+      </div>
 
-        <!-- 小分類 / 処方名（下段・小さめ・落ち着いた色・サブ） -->
-        <p class="text-xs text-slate-500 mt-1">${item.subCategory || item.formulaName || ''}</p>
+      <!-- 右側ツール群: 「比較表を見る」ボタン ＆ ブックマーク -->
+      <div class="flex items-center gap-2 shrink-0">
+        ${(() => {
+          if (isSingleHerbItem(item)) return '';
+          const compareTarget = (!isGenericCategory(item.subCategory) && item.subCategory) ? item.subCategory : item.name;
+          if (isGenericCategory(compareTarget)) return '';
+          return `
+            <button 
+              type="button" 
+              onclick="openComparePage('${encodeURIComponent(compareTarget)}')" 
+              class="px-2.5 py-1 bg-emerald-800 hover:bg-emerald-900 text-white font-medium text-xs rounded shadow-2xs transition cursor-pointer flex items-center gap-1.5 shrink-0" 
+              title="「${compareTarget}」の他社比較表を開く">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              <span>他社比較表</span>
+            </button>
+          `;
+        })()}
+
+        <!-- しおり型ブックマーク -->
+        <div class="flex items-center gap-1 shrink-0 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs">
+          <button 
+            type="button" 
+            onclick="toggleBookmark(${globalIdx}, 1)" 
+            class="p-0.5 hover:bg-slate-100 rounded text-slate-400 hover:text-amber-500 transition cursor-pointer" 
+            title="ブックマーク1に追加/解除">
+            <svg id="modalBmIcon-1-${globalIdx}" class="w-4 h-4 transition" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="${isBm1 ? '#f59e0b' : 'none'}" stroke="${isBm1 ? '#d97706' : '#94a3b8'}"/>
+            </svg>
+          </button>
+          <button 
+            type="button" 
+            onclick="toggleBookmark(${globalIdx}, 2)" 
+            class="p-0.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-500 transition cursor-pointer" 
+            title="ブックマーク2に追加/解除">
+            <svg id="modalBmIcon-2-${globalIdx}" class="w-4 h-4 transition" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" fill="${isBm2 ? '#3b82f6' : 'none'}" stroke="${isBm2 ? '#2563eb' : '#94a3b8'}"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     
@@ -1921,13 +1926,11 @@ function renderComparePageContent() {
     const targetKey = normalizeFormulaKey(formula);
     const isTargetGeneric = isGenericCategory(formula) || isGenericCategory(targetKey);
 
-    // 1. 小分類または処方名で完全一致する商品を抽出（包括的な生薬製剤でのマッチングは厳格に除外）
+    // 1. 小分類または処方名で完全一致する商品を抽出
     const nameMatched = STATE.items.filter(it => {
-      // 比較対象が「生薬製剤」等の包括分類名の場合は、小分類での自動マッチングを行わず、商品名完全一致のみ
       if (isTargetGeneric) {
         return it.name === formula || it.rawName === formula;
       }
-
       const isSubGeneric = isGenericCategory(it.subCategory);
       const sub = (!isSubGeneric && it.subCategory) ? normalizeFormulaKey(it.subCategory) : '';
       const fn = it.formulaName ? normalizeFormulaKey(it.formulaName) : '';
@@ -1939,7 +1942,6 @@ function renderComparePageContent() {
       return subMatches || fnMatches || nameMatches;
     });
 
-    // 基準商品が商品名から直接見つかる場合（例: イスクラ冠元顆粒など）
     if (nameMatched.length === 0) {
       const directItem = STATE.items.find(it => it.name === formula || it.rawName === formula);
       if (directItem) nameMatched.push(directItem);
@@ -1956,7 +1958,6 @@ function renderComparePageContent() {
     });
 
     // 3. 全商品の中から「全て同じ生薬を使っている（生薬セットが100%完全一致）」商品を追加
-    // （一部重なっているものは厳格に除外）
     const matchedSet = new Set(nameMatched);
     if (targetHerbSets.length > 0) {
       STATE.items.forEach(it => {
@@ -1974,16 +1975,24 @@ function renderComparePageContent() {
     titleText = `「${formula}」各社製剤 配合量・成分比較`;
   }
 
+  // 比較対象から利用可能な会社と剤形を抽出
   const availableCompanies = [];
+  const availableDosageForms = [];
   allMatched.forEach(it => {
     if (!availableCompanies.find(c => c.id === it.company)) {
       availableCompanies.push({ id: it.company, name: it.companyName });
     }
+    const form = it.dosageForm || 'その他';
+    if (!availableDosageForms.includes(form)) {
+      availableDosageForms.push(form);
+    }
   });
 
+  // フィルタリング
   const filtered = allMatched.filter(it => {
     if (!STATE.compareSelectedTypes.has(it.type)) return false;
     if (STATE.compareSelectedCompanies.size > 0 && !STATE.compareSelectedCompanies.has(it.company)) return false;
+    if (STATE.compareSelectedDosageForms.size > 0 && !STATE.compareSelectedDosageForms.has(it.dosageForm || 'その他')) return false;
     return true;
   });
 
@@ -2007,181 +2016,263 @@ function renderComparePageContent() {
   const showAdditives = STATE.compareVisibleSections.additives;
   const showPrecautions = STATE.compareVisibleSections.precautions;
 
+  // 各プルダウンのラベル生成
+  let typeLabel = '区分: すべて';
+  if (STATE.compareSelectedTypes.size === 1) {
+    typeLabel = STATE.compareSelectedTypes.has('medical') ? '区分: 医療用' : '区分: 一般用';
+  } else if (STATE.compareSelectedTypes.size === 0) {
+    typeLabel = '区分: 未選択';
+  }
+
+  let companyLabel = '製薬会社: 全社';
+  if (STATE.compareSelectedCompanies.size === 1) {
+    const compId = Array.from(STATE.compareSelectedCompanies)[0];
+    const comp = availableCompanies.find(c => c.id === compId);
+    companyLabel = `製薬会社: ${comp ? comp.name : '1社'}`;
+  } else if (STATE.compareSelectedCompanies.size > 1) {
+    companyLabel = `製薬会社: ${STATE.compareSelectedCompanies.size}社`;
+  }
+
+  let dosageLabel = '剤形: 全て';
+  if (STATE.compareSelectedDosageForms.size === 1) {
+    dosageLabel = `剤形: ${Array.from(STATE.compareSelectedDosageForms)[0]}`;
+  } else if (STATE.compareSelectedDosageForms.size > 1) {
+    dosageLabel = `剤形: ${STATE.compareSelectedDosageForms.size}種`;
+  }
+
   content.innerHTML = `
     <!-- タイトルヘッダー -->
-    <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+    <div class="py-3 px-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
           <span>${titleText}</span>
         </h2>
-        <p class="text-xs text-slate-500 mt-0.5">
+        <p class="text-[11px] text-slate-500 mt-0.5">
           該当: 全 ${allMatched.length} 件中 <span class="font-bold text-slate-800">${filtered.length} 件</span> 表示中
-          （商品名をクリックすると添付文書・詳細情報が開きます）
+          （商品名をクリックすると詳細が開きます）
         </p>
       </div>
     </div>
 
-    <!-- 絞り込み ＆ 表示項目フィルターエリア -->
-    <div class="px-4 py-3 bg-slate-50/70 border-b border-slate-200 space-y-2.5 text-xs">
+    <!-- 絞り込みプルダウンバー -->
+    <div class="px-3.5 py-2.5 bg-slate-50/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
       
-      <!-- 区分 ＆ 【表示項目】チェックボックス行 -->
-      <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <!-- 区分 -->
-        <div class="flex items-center gap-2">
-          <span class="font-bold text-slate-700">区分:</span>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="medical" 
-              ${STATE.compareSelectedTypes.has('medical') ? 'checked' : ''}
-              onchange="onCompareTypeChange(this)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="font-medium text-slate-800">医療用</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="otc" 
-              ${STATE.compareSelectedTypes.has('otc') ? 'checked' : ''}
-              onchange="onCompareTypeChange(this)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="font-medium text-slate-800">一般用(OTC)</span>
-          </label>
-        </div>
-
-        <!-- 【表示項目】 -->
-        <div class="flex items-center gap-3 pl-3 border-l border-slate-300 flex-wrap">
-          <span class="font-bold text-slate-700">【表示項目】:</span>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="efficacy" 
-              ${showEfficacy ? 'checked' : ''}
-              onchange="onCompareVisibleSectionChange('efficacy', this.checked)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="text-slate-800">効能効果</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="usageMethod" 
-              ${showUsageMethod ? 'checked' : ''}
-              onchange="onCompareVisibleSectionChange('usageMethod', this.checked)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="text-slate-800">用法</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="dailyDose" 
-              ${showDailyDose ? 'checked' : ''}
-              onchange="onCompareVisibleSectionChange('dailyDose', this.checked)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="text-slate-800">１日服用量</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="ingredients" 
-              ${showIngredients ? 'checked' : ''}
-              onchange="onCompareVisibleSectionChange('ingredients', this.checked)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="text-slate-800 font-bold">構成生薬 (エキス量含む)</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="additives" 
-              ${showAdditives ? 'checked' : ''}
-              onchange="onCompareVisibleSectionChange('additives', this.checked)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="text-slate-800">添加物</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              value="precautions" 
-              ${showPrecautions ? 'checked' : ''}
-              onchange="onCompareVisibleSectionChange('precautions', this.checked)"
-              class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
-            >
-            <span class="text-slate-800">使用上の注意</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- 会社チェックボックス（複数選択） -->
-      <div class="flex items-start gap-3 pt-1.5 border-t border-slate-200">
-        <span class="font-bold text-slate-700 min-w-[50px] pt-0.5">製薬会社:</span>
-        <div class="flex flex-wrap gap-2 items-center">
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- 1. 区分プルダウン -->
+        <div class="relative">
           <button 
             type="button" 
-            onclick="toggleCompareAllCompanies(${availableCompanies.length})" 
-            class="text-[11px] text-emerald-700 hover:underline font-bold pr-1">
-            ${STATE.compareSelectedCompanies.size === 0 ? '全解除' : '全社表示'}
+            id="compareTypeDropdownBtn" 
+            onclick="toggleCompareDropdown('compareType')" 
+            class="px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-1.5 shadow-2xs cursor-pointer">
+            <span id="compareTypeLabel">${typeLabel}</span>
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </button>
-          ${availableCompanies.map(comp => {
-            const isChecked = STATE.compareSelectedCompanies.size === 0 || STATE.compareSelectedCompanies.has(comp.id);
-            const badgeClass = getCompanyBadgeClass(comp.id);
-            return `
-              <label class="flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer border ${badgeClass} text-[11px] select-none">
+          <div id="compareTypeDropdownMenu" class="dropdown-menu absolute left-0 top-full mt-1 w-36 p-2 hidden shadow-lg">
+            <div class="space-y-1">
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
                 <input 
                   type="checkbox" 
-                  value="${comp.id}" 
-                  ${isChecked ? 'checked' : ''}
-                  onchange="onCompareCompanyChange(this)"
+                  value="medical" 
+                  ${STATE.compareSelectedTypes.has('medical') ? 'checked' : ''} 
+                  onchange="onCompareTypeToggle(this)"
                   class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
                 >
-                <span>${comp.name}</span>
+                <span class="text-slate-800">医療用</span>
               </label>
-            `;
-          }).join('')}
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  value="otc" 
+                  ${STATE.compareSelectedTypes.has('otc') ? 'checked' : ''} 
+                  onchange="onCompareTypeToggle(this)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800">一般用(OTC)</span>
+              </label>
+            </div>
+          </div>
         </div>
+
+        <!-- 2. 製薬会社プルダウン -->
+        <div class="relative">
+          <button 
+            type="button" 
+            id="compareCompanyDropdownBtn" 
+            onclick="toggleCompareDropdown('compareCompany')" 
+            class="px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-1.5 shadow-2xs cursor-pointer">
+            <span id="compareCompanyLabel">${companyLabel}</span>
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="compareCompanyDropdownMenu" class="dropdown-menu absolute left-0 top-full mt-1 w-max min-w-[170px] p-2 hidden shadow-lg">
+            <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 text-[11px]">
+              <button type="button" onclick="selectAllCompareCompanies()" class="text-emerald-700 hover:underline font-medium">全社表示</button>
+              <button type="button" onclick="clearAllCompareCompanies()" class="text-slate-500 hover:underline">クリア</button>
+            </div>
+            <div class="max-h-56 overflow-y-auto space-y-1 pr-1">
+              ${availableCompanies.map(c => {
+                const isChecked = STATE.compareSelectedCompanies.size === 0 || STATE.compareSelectedCompanies.has(c.id);
+                return `
+                  <label class="flex items-center text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      value="${c.id}" 
+                      ${isChecked ? 'checked' : ''} 
+                      onchange="onCompareCompanyToggle(this)"
+                      class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 shrink-0"
+                    >
+                    <span class="text-slate-800 ml-1.5 truncate">${c.name}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 剤形プルダウン -->
+        <div class="relative">
+          <button 
+            type="button" 
+            id="compareDosageDropdownBtn" 
+            onclick="toggleCompareDropdown('compareDosage')" 
+            class="px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-1.5 shadow-2xs cursor-pointer">
+            <span id="compareDosageLabel">${dosageLabel}</span>
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="compareDosageDropdownMenu" class="dropdown-menu absolute left-0 top-full mt-1 w-max min-w-[140px] p-2 hidden shadow-lg">
+            <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 text-[11px]">
+              <button type="button" onclick="selectAllCompareDosageForms()" class="text-emerald-700 hover:underline font-medium">全選択</button>
+              <button type="button" onclick="clearAllCompareDosageForms()" class="text-slate-500 hover:underline">クリア</button>
+            </div>
+            <div class="max-h-56 overflow-y-auto space-y-1 pr-1">
+              ${availableDosageForms.map(form => {
+                const isChecked = STATE.compareSelectedDosageForms.size === 0 || STATE.compareSelectedDosageForms.has(form);
+                return `
+                  <label class="flex items-center text-xs py-1 px-1.5 rounded hover:bg-slate-50 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      value="${form}" 
+                      ${isChecked ? 'checked' : ''} 
+                      onchange="onCompareDosageToggle(this)"
+                      class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 shrink-0"
+                    >
+                    <span class="text-slate-800 ml-1.5 truncate">${form}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 表示項目プルダウン -->
+        <div class="relative">
+          <button 
+            type="button" 
+            id="compareSectionDropdownBtn" 
+            onclick="toggleCompareDropdown('compareSection')" 
+            class="px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-1.5 shadow-2xs cursor-pointer">
+            <span>表示項目</span>
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="compareSectionDropdownMenu" class="dropdown-menu absolute left-0 top-full mt-1 w-48 p-2 hidden shadow-lg">
+            <div class="space-y-1">
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  ${showEfficacy ? 'checked' : ''} 
+                  onchange="onCompareVisibleSectionChange('efficacy', this.checked)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800">効能効果</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  ${showUsageMethod ? 'checked' : ''} 
+                  onchange="onCompareVisibleSectionChange('usageMethod', this.checked)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800">用法</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  ${showDailyDose ? 'checked' : ''} 
+                  onchange="onCompareVisibleSectionChange('dailyDose', this.checked)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800">１日服用量</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  ${showIngredients ? 'checked' : ''} 
+                  onchange="onCompareVisibleSectionChange('ingredients', this.checked)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800 font-bold">構成生薬 (エキス量含む)</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  ${showAdditives ? 'checked' : ''} 
+                  onchange="onCompareVisibleSectionChange('additives', this.checked)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800">添加物</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs p-1 rounded hover:bg-slate-50 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  ${showPrecautions ? 'checked' : ''} 
+                  onchange="onCompareVisibleSectionChange('precautions', this.checked)"
+                  class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-700"
+                >
+                <span class="text-slate-800">使用上の注意</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      <!-- リセット -->
+      <button 
+        type="button" 
+        onclick="resetCompareFilters()" 
+        class="text-[11px] text-slate-500 hover:text-slate-800 hover:underline font-medium cursor-pointer">
+        条件リセット
+      </button>
 
     </div>
 
-    <!-- 比較テーブル（比較対象が少ない時でも横幅を小さく保つ） -->
+    <!-- 比較テーブル -->
     <div class="overflow-x-auto max-w-full p-0">
       ${filtered.length === 0 ? `
         <div class="p-8 text-center text-xs text-slate-500">
           <p class="font-medium">条件に合致する製剤がありません</p>
-          <p class="text-[11px] text-slate-400 mt-1">上の「区分」や「製薬会社」の絞り込みを変更してください。</p>
+          <p class="text-[11px] text-slate-400 mt-1">上の「区分」「製薬会社」「剤形」の絞り込みを変更してください。</p>
         </div>
       ` : `
         <table class="compare-table text-xs text-left border-collapse">
           <thead>
-            <tr class="bg-slate-100 text-slate-700">
-              <th class="compare-header-cell text-center font-bold">比較項目</th>
-              ${filtered.map(item => {
-                const badgeClass = getCompanyBadgeClass(item.company);
-                const dosageForm = item.dosageForm || 'その他';
-                const globalIdx = typeof item._globalIndex === 'number' ? item._globalIndex : STATE.items.indexOf(item);
+            <tr>
+              <th class="sticky-col sticky-col-top header-cell">項目</th>
+              ${filtered.map(it => {
+                const badgeClass = getCompanyBadgeClass(it.company);
+                const dosageForm = it.dosageForm || 'その他';
+                const isMedical = it.type === 'medical';
                 return `
-                  <th class="compare-col-header">
-                    <!-- 1行目: 企業名 -->
-                    <div class="compare-row-1-company">
-                      <span class="px-2 py-0.2 rounded text-[10px] font-bold border ${badgeClass}">${item.companyName}</span>
-                    </div>
-                    <!-- 2〜3行目: 商品名（クリックで該当製品の詳細画面へ100%確実にジャンプ） -->
-                    <div 
-                      class="compare-row-2-3-name" 
-                      onclick="openDetailPageByIndex(${globalIdx})" 
-                      title="クリックして詳細を表示: ${item.rawName || item.name}">
-                      ${item.name}
-                    </div>
-                    <!-- 4行目: 区分・剤形 -->
-                    <div class="compare-row-4-type">
-                      <span>${item.type === 'medical' ? '医療用' : 'OTC'}</span>
-                      <span>·</span>
-                      <span class="text-slate-700 font-sans">${dosageForm}</span>
+                  <th class="compare-header-cell">
+                    <div class="flex flex-col gap-1 items-start">
+                      <div class="flex items-center gap-1 flex-wrap">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${it.companyName}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium ${isMedical ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}">${isMedical ? '医療用' : 'OTC'}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${dosageForm}</span>
+                      </div>
+                      <a href="javascript:void(0)" onclick="openDetailPageFromCompare('${it.name}')" class="font-bold text-slate-900 hover:text-emerald-800 hover:underline text-xs mt-0.5">
+                        ${it.rawName || it.name}
+                      </a>
                     </div>
                   </th>
                 `;
@@ -2189,137 +2280,62 @@ function renderComparePageContent() {
             </tr>
           </thead>
           <tbody>
-            
-            <!-- 効能効果（チェック時のみ表示） -->
             ${showEfficacy ? `
-              <tr class="bg-slate-50/70">
-                <td class="compare-header-cell font-bold text-slate-700">効能効果</td>
-                ${filtered.map(it => {
-                  const cleaned = cleanDisplayText(it.efficacy);
-                  return `
-                    <td class="p-2.5 text-[11px] text-slate-700 align-top leading-relaxed max-w-[220px] bg-white">
-                      <div class="max-h-36 overflow-y-auto whitespace-pre-line">${cleaned || '-'}</div>
-                    </td>
-                  `;
-                }).join('')}
+              <tr class="section-row">
+                <th class="sticky-col font-bold text-slate-700 bg-slate-100">効能効果</th>
+                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanDisplayText(it.efficacy) || '-'}</td>`).join('')}
               </tr>
             ` : ''}
 
-            <!-- 用法（チェック時のみ表示、服用タイミング・方法・回数を横並び比較） -->
             ${showUsageMethod ? `
-              <tr class="bg-blue-50/20">
-                <td class="compare-header-cell font-bold text-slate-800">用法</td>
-                ${filtered.map(it => {
-                  const method = extractUsageMethod(it.usage);
-                  return `
-                    <td class="p-2.5 text-[11px] text-slate-700 align-top leading-relaxed max-w-[220px] bg-white">
-                      <div class="max-h-36 overflow-y-auto whitespace-pre-line">${method || '-'}</div>
-                    </td>
-                  `;
-                }).join('')}
+              <tr class="section-row">
+                <th class="sticky-col font-bold text-slate-700 bg-slate-100">用法</th>
+                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanDisplayText(it.usage) || '-'}</td>`).join('')}
               </tr>
             ` : ''}
 
-            <!-- 1日服用量（チェック時のみ表示、閉じカッコ修復） -->
             ${showDailyDose ? `
-              <tr class="bg-white">
-                <td class="compare-header-cell font-bold text-slate-700">1日服用量</td>
-                ${filtered.map(it => `
-                  <td class="text-center font-mono text-[11px] bg-white">${formatDailyDose(it.dailyDose)}</td>
-                `).join('')}
+              <tr class="section-row">
+                <th class="sticky-col font-bold text-slate-700 bg-slate-100">１日服用量</th>
+                ${filtered.map(it => `<td class="text-center font-mono text-[11px] bg-white">${formatDailyDose(it.dailyDose)}</td>`).join('')}
               </tr>
             ` : ''}
-            
-            <!-- 構成生薬（エキス量含む、チェック時のみ表示、単位g統一） -->
+
             ${showIngredients ? `
-              <!-- エキス分量 -->
-              <tr class="bg-emerald-50/40">
-                <td class="compare-header-cell font-bold text-emerald-950">エキス量</td>
-                ${filtered.map(it => {
-                  const ext = (it.ingredients || []).find(x => x.isExtract);
-                  const extDisplay = ext ? formatHerbAmount(ext.amount, ext.amountStr) : '-';
-                  return `
-                    <td class="text-center font-mono font-bold text-emerald-900 bg-emerald-50/20">
-                      ${extDisplay}
-                    </td>
-                  `;
-                }).join('')}
-              </tr>
-
-              <!-- 各生薬の分量（単位g統一 ＆ 同量マーカー色分け対応） -->
-              ${sortedHerbs.map(herb => {
-                // この生薬における各商品の配合量数値を抽出
-                const amounts = filtered.map(it => {
-                  const ing = (it.ingredients || []).find(x => cleanHerbName(x.name) === herb);
-                  return (ing && typeof ing.amount === 'number' && ing.amount > 0) ? ing.amount : null;
-                });
-
-                // 数値ごとの登場回数を集計
-                const countMap = {};
-                amounts.forEach(amt => {
-                  if (amt !== null) countMap[amt] = (countMap[amt] || 0) + 1;
-                });
-
-                // 2社以上で一致する数値（同量）のみを抽出し、大きい順にソート
-                const duplicateAmts = Object.keys(countMap)
-                  .filter(amt => countMap[amt] >= 2)
-                  .map(Number)
-                  .sort((a, b) => b - a);
-
+              ${sortedHerbs.map(herbName => {
                 return `
-                <tr class="hover:bg-slate-50">
-                  <td class="compare-header-cell font-medium text-slate-800">${herb}</td>
-                  ${filtered.map(it => {
-                    const ing = (it.ingredients || []).find(x => cleanHerbName(x.name) === herb);
-                    const herbDisplay = ing ? formatHerbAmount(ing.amount, ing.amountStr) : '-';
-                    const amt = (ing && typeof ing.amount === 'number' && ing.amount > 0) ? ing.amount : null;
-
-                    let markerClass = '';
-                    if (amt !== null) {
-                      const matchIdx = duplicateAmts.indexOf(amt);
-                      if (matchIdx !== -1) {
-                        markerClass = `marker-match-${matchIdx % 5}`;
-                      }
-                    }
-
-                    return `
-                      <td class="text-center font-mono ${markerClass ? markerClass : (ing ? 'font-bold text-slate-800 bg-white' : 'text-slate-300 bg-white')}">
-                        ${herbDisplay}
-                      </td>
-                    `;
-                  }).join('')}
-                </tr>
+                  <tr>
+                    <th class="sticky-col font-medium text-slate-800 bg-slate-50/80">${herbName}</th>
+                    ${filtered.map(it => {
+                      const ing = (it.ingredients || []).find(i => cleanHerbName(i.name) === herbName && !i.isExtract);
+                      if (!ing) return '<td class="text-center text-slate-300 bg-white">-</td>';
+                      return `<td class="text-center font-mono text-xs font-semibold text-slate-800 bg-white">${formatHerbAmount(ing.amount, ing.amountStr)}</td>`;
+                    }).join('')}
+                  </tr>
                 `;
               }).join('')}
-            ` : ''}
 
-            <!-- 添加物（チェック時のみ表示） -->
-            ${showAdditives ? `
-              <tr class="bg-slate-50/50">
-                <td class="compare-header-cell font-bold text-slate-700">添加物</td>
+              <tr class="border-t border-slate-300 bg-emerald-50/40">
+                <th class="sticky-col font-bold text-emerald-950 bg-emerald-100/60">乾燥エキス量</th>
                 ${filtered.map(it => {
-                  const adds = cleanAdditives(it.additives);
-                  return `
-                    <td class="p-2.5 text-[11px] text-slate-600 align-top leading-relaxed max-w-[220px] bg-white">
-                      <div class="max-h-28 overflow-y-auto">${adds || '記載なし'}</div>
-                    </td>
-                  `;
+                  const ext = (it.ingredients || []).find(i => i.isExtract);
+                  if (!ext) return '<td class="text-center text-slate-400 bg-emerald-50/20">-</td>';
+                  return `<td class="text-center font-mono text-xs font-bold text-emerald-900 bg-emerald-50/20">${formatHerbAmount(ext.amount, ext.amountStr)}</td>`;
                 }).join('')}
               </tr>
             ` : ''}
 
-            <!-- 使用上の注意（チェック時のみ表示） -->
+            ${showAdditives ? `
+              <tr class="section-row">
+                <th class="sticky-col font-bold text-slate-700 bg-slate-100">添加物</th>
+                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanAdditives(it.additives) || '-'}</td>`).join('')}
+              </tr>
+            ` : ''}
+
             ${showPrecautions ? `
-              <tr class="bg-amber-50/20">
-                <td class="compare-header-cell font-bold text-slate-800">使用上の注意</td>
-                ${filtered.map(it => {
-                  const cleaned = cleanDisplayText(it.precautions);
-                  return `
-                    <td class="p-2.5 text-[11px] text-slate-700 align-top leading-relaxed max-w-[240px] bg-white">
-                      <div class="max-h-48 overflow-y-auto whitespace-pre-line text-slate-600">${cleaned || '-'}</div>
-                    </td>
-                  `;
-                }).join('')}
+              <tr class="section-row">
+                <th class="sticky-col font-bold text-slate-700 bg-slate-100">使用上の注意</th>
+                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanDisplayText(it.precautions) || '-'}</td>`).join('')}
               </tr>
             ` : ''}
 
@@ -2330,12 +2346,21 @@ function renderComparePageContent() {
   `;
 }
 
-function onCompareVisibleSectionChange(section, isChecked) {
-  STATE.compareVisibleSections[section] = isChecked;
-  renderComparePageContent();
+// 比較画面内プルダウンのトグル
+function toggleCompareDropdown(prefix) {
+  const menu = document.getElementById(prefix + 'DropdownMenu');
+  if (menu) {
+    const isHidden = menu.classList.contains('hidden');
+    // 他の比較プルダウンを閉じる
+    ['compareType', 'compareCompany', 'compareDosage', 'compareSection'].forEach(p => {
+      const other = document.getElementById(p + 'DropdownMenu');
+      if (other) other.classList.add('hidden');
+    });
+    if (isHidden) menu.classList.remove('hidden');
+  }
 }
 
-function onCompareTypeChange(cb) {
+function onCompareTypeToggle(cb) {
   if (cb.checked) {
     STATE.compareSelectedTypes.add(cb.value);
   } else {
@@ -2344,9 +2369,10 @@ function onCompareTypeChange(cb) {
   renderComparePageContent();
 }
 
-function onCompareCompanyChange(cb) {
+function onCompareCompanyToggle(cb) {
   if (STATE.compareSelectedCompanies.size === 0) {
-    const allCbs = document.querySelectorAll('#comparePageContent input[type="checkbox"][value]:not([value="medical"]):not([value="otc"]):not([value="efficacy"]):not([value="dailyDose"]):not([value="ingredients"])');
+    // 全選択状態から特定のチェックが外された場合
+    const allCbs = document.querySelectorAll('#compareCompanyDropdownMenu input[type="checkbox"]');
     allCbs.forEach(c => {
       if (c.value !== cb.value) STATE.compareSelectedCompanies.add(c.value);
     });
@@ -2360,13 +2386,59 @@ function onCompareCompanyChange(cb) {
   renderComparePageContent();
 }
 
-function toggleCompareAllCompanies() {
-  if (STATE.compareSelectedCompanies.size === 0) {
-    STATE.compareSelectedCompanies = new Set(['__none__']);
+function selectAllCompareCompanies() {
+  STATE.compareSelectedCompanies.clear();
+  renderComparePageContent();
+}
+
+function clearAllCompareCompanies() {
+  STATE.compareSelectedCompanies = new Set(['__none__']);
+  renderComparePageContent();
+}
+
+function onCompareDosageToggle(cb) {
+  if (STATE.compareSelectedDosageForms.size === 0) {
+    const allCbs = document.querySelectorAll('#compareDosageDropdownMenu input[type="checkbox"]');
+    allCbs.forEach(c => {
+      if (c.value !== cb.value) STATE.compareSelectedDosageForms.add(c.value);
+    });
   } else {
-    STATE.compareSelectedCompanies.clear();
+    if (cb.checked) {
+      STATE.compareSelectedDosageForms.add(cb.value);
+    } else {
+      STATE.compareSelectedDosageForms.delete(cb.value);
+    }
   }
   renderComparePageContent();
+}
+
+function selectAllCompareDosageForms() {
+  STATE.compareSelectedDosageForms.clear();
+  renderComparePageContent();
+}
+
+function clearAllCompareDosageForms() {
+  STATE.compareSelectedDosageForms = new Set(['__none__']);
+  renderComparePageContent();
+}
+
+function onCompareVisibleSectionChange(section, isChecked) {
+  STATE.compareVisibleSections[section] = isChecked;
+  renderComparePageContent();
+}
+
+function resetCompareFilters() {
+  STATE.compareSelectedTypes = new Set(['medical', 'otc']);
+  STATE.compareSelectedCompanies.clear();
+  STATE.compareSelectedDosageForms.clear();
+  renderComparePageContent();
+}
+
+function openDetailPageFromCompare(productName) {
+  const item = STATE.items.find(it => it.name === productName || it.rawName === productName);
+  if (item) {
+    openDetailPage(item, true);
+  }
 }
 
 // イベントリスナー設定
