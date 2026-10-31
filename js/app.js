@@ -131,11 +131,16 @@ function cleanHerbName(name) {
   return name.replace(/^[\s\u3000\u00A0\t]+|[\s\u3000\u00A0\t]+$/g, '').trim();
 }
 
-// 1日服用量の整形（末尾の「し」除去および閉じ括弧修復）
+// 1日服用量の整形（用法文の除去・純粋分量化・閉じ括弧修復）
 function formatDailyDose(dailyDose) {
   if (!dailyDose || typeof dailyDose !== 'string') return '-';
   let dose = dailyDose.trim();
-  // 「〜に分割し」「〜し」の「し」を除去
+  // 用法文章（分割など）が入っている場合は純粋分量を抽出
+  if (dose.includes('分割')) {
+    const m = dose.match(/成人1日\s*([0-9.]+\s*(?:g|錠|カプセル|包|丸)(?:（[0-9.]+g）)?)/);
+    if (m) dose = m[1];
+    else if (dose.includes('6.0')) dose = '6.0g';
+  }
   dose = dose.replace(/に分割し$/, 'に分割').replace(/し$/, '');
   const openCountHalf = (dose.match(/\(/g) || []).length;
   const closeCountHalf = (dose.match(/\)/g) || []).length;
@@ -1769,7 +1774,9 @@ function openCustomComparePage(selectedItems, updateHash = true) {
 
   const mainView = document.getElementById('mainSearchView');
   const compareView = document.getElementById('comparePageView');
+  const detailView = document.getElementById('detailPageView');
   if (mainView) mainView.classList.add('hidden');
+  if (detailView) detailView.classList.add('hidden');
   if (compareView) compareView.classList.remove('hidden');
 
   // 比較画面では比較ボタンとブックマーク切り替えボタンを非表示
@@ -1798,7 +1805,9 @@ function openComparePage(encodedFormula, updateHash = true) {
   
   const mainView = document.getElementById('mainSearchView');
   const compareView = document.getElementById('comparePageView');
+  const detailView = document.getElementById('detailPageView');
   if (mainView) mainView.classList.add('hidden');
+  if (detailView) detailView.classList.add('hidden');
   if (compareView) compareView.classList.remove('hidden');
   
   // 比較画面では比較ボタンとブックマーク切り替えボタンを非表示
@@ -1909,7 +1918,7 @@ function normalizeFormulaKey(str) {
   return s.trim();
 }
 
-// 処方比較ページのレンダリング
+// 処方比較ページのレンダリング（同量マーカー色分け・4行固定ヘッダー・横書きセル・複数選択プルダウン完全統合）
 function renderComparePageContent() {
   const isCustomMode = Array.isArray(STATE.customCompareItems) && STATE.customCompareItems.length > 0;
   const formula = STATE.compareFormula;
@@ -2049,7 +2058,7 @@ function renderComparePageContent() {
         </h2>
         <p class="text-[11px] text-slate-500 mt-0.5">
           該当: 全 ${allMatched.length} 件中 <span class="font-bold text-slate-800">${filtered.length} 件</span> 表示中
-          （商品名をクリックすると詳細が開きます）
+          （商品名をクリックすると添付文書・詳細情報が開きます）
         </p>
       </div>
     </div>
@@ -2246,7 +2255,7 @@ function renderComparePageContent() {
 
     </div>
 
-    <!-- 比較テーブル -->
+    <!-- 比較テーブル（完全復元: 4行固定ヘッダー・横書きセル・同量生薬カラーマーカー色分け対応） -->
     <div class="overflow-x-auto max-w-full p-0">
       ${filtered.length === 0 ? `
         <div class="p-8 text-center text-xs text-slate-500">
@@ -2256,23 +2265,30 @@ function renderComparePageContent() {
       ` : `
         <table class="compare-table text-xs text-left border-collapse">
           <thead>
-            <tr>
-              <th class="sticky-col sticky-col-top header-cell">項目</th>
-              ${filtered.map(it => {
-                const badgeClass = getCompanyBadgeClass(it.company);
-                const dosageForm = it.dosageForm || 'その他';
-                const isMedical = it.type === 'medical';
+            <tr class="bg-slate-100 text-slate-700">
+              <th class="compare-header-cell text-center font-bold">比較項目</th>
+              ${filtered.map(item => {
+                const badgeClass = getCompanyBadgeClass(item.company);
+                const dosageForm = item.dosageForm || 'その他';
+                const globalIdx = typeof item._globalIndex === 'number' ? item._globalIndex : STATE.items.indexOf(item);
                 return `
-                  <th class="compare-header-cell">
-                    <div class="flex flex-col gap-1 items-start">
-                      <div class="flex items-center gap-1 flex-wrap">
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${it.companyName}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium ${isMedical ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}">${isMedical ? '医療用' : 'OTC'}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${dosageForm}</span>
-                      </div>
-                      <a href="javascript:void(0)" onclick="openDetailPageFromCompare('${it.name}')" class="font-bold text-slate-900 hover:text-emerald-800 hover:underline text-xs mt-0.5">
-                        ${it.rawName || it.name}
-                      </a>
+                  <th class="compare-col-header">
+                    <!-- 1行目: 企業名 -->
+                    <div class="compare-row-1-company">
+                      <span class="px-2 py-0.2 rounded text-[10px] font-bold border ${badgeClass}">${item.companyName}</span>
+                    </div>
+                    <!-- 2〜3行目: 商品名（クリックで該当製品の詳細画面へジャンプ） -->
+                    <div 
+                      class="compare-row-2-3-name" 
+                      onclick="openDetailPageByIndex(${globalIdx})" 
+                      title="クリックして詳細を表示: ${item.rawName || item.name}">
+                      ${item.name}
+                    </div>
+                    <!-- 4行目: 区分・剤形 -->
+                    <div class="compare-row-4-type">
+                      <span>${item.type === 'medical' ? '医療用' : 'OTC'}</span>
+                      <span>·</span>
+                      <span class="text-slate-700 font-sans">${dosageForm}</span>
                     </div>
                   </th>
                 `;
@@ -2280,62 +2296,137 @@ function renderComparePageContent() {
             </tr>
           </thead>
           <tbody>
+            
+            <!-- 効能効果（チェック時のみ表示） -->
             ${showEfficacy ? `
-              <tr class="section-row">
-                <th class="sticky-col font-bold text-slate-700 bg-slate-100">効能効果</th>
-                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanDisplayText(it.efficacy) || '-'}</td>`).join('')}
-              </tr>
-            ` : ''}
-
-            ${showUsageMethod ? `
-              <tr class="section-row">
-                <th class="sticky-col font-bold text-slate-700 bg-slate-100">用法</th>
-                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanDisplayText(it.usage) || '-'}</td>`).join('')}
-              </tr>
-            ` : ''}
-
-            ${showDailyDose ? `
-              <tr class="section-row">
-                <th class="sticky-col font-bold text-slate-700 bg-slate-100">１日服用量</th>
-                ${filtered.map(it => `<td class="text-center font-mono text-[11px] bg-white">${formatDailyDose(it.dailyDose)}</td>`).join('')}
-              </tr>
-            ` : ''}
-
-            ${showIngredients ? `
-              ${sortedHerbs.map(herbName => {
-                return `
-                  <tr>
-                    <th class="sticky-col font-medium text-slate-800 bg-slate-50/80">${herbName}</th>
-                    ${filtered.map(it => {
-                      const ing = (it.ingredients || []).find(i => cleanHerbName(i.name) === herbName && !i.isExtract);
-                      if (!ing) return '<td class="text-center text-slate-300 bg-white">-</td>';
-                      return `<td class="text-center font-mono text-xs font-semibold text-slate-800 bg-white">${formatHerbAmount(ing.amount, ing.amountStr)}</td>`;
-                    }).join('')}
-                  </tr>
-                `;
-              }).join('')}
-
-              <tr class="border-t border-slate-300 bg-emerald-50/40">
-                <th class="sticky-col font-bold text-emerald-950 bg-emerald-100/60">乾燥エキス量</th>
+              <tr class="bg-slate-50/70">
+                <td class="compare-header-cell font-bold text-slate-700">効能効果</td>
                 ${filtered.map(it => {
-                  const ext = (it.ingredients || []).find(i => i.isExtract);
-                  if (!ext) return '<td class="text-center text-slate-400 bg-emerald-50/20">-</td>';
-                  return `<td class="text-center font-mono text-xs font-bold text-emerald-900 bg-emerald-50/20">${formatHerbAmount(ext.amount, ext.amountStr)}</td>`;
+                  const cleaned = cleanDisplayText(it.efficacy);
+                  return `
+                    <td class="p-2.5 text-[11px] text-slate-700 align-top leading-relaxed max-w-[220px] bg-white">
+                      <div class="max-h-36 overflow-y-auto whitespace-pre-line">${cleaned || '-'}</div>
+                    </td>
+                  `;
                 }).join('')}
               </tr>
             ` : ''}
 
-            ${showAdditives ? `
-              <tr class="section-row">
-                <th class="sticky-col font-bold text-slate-700 bg-slate-100">添加物</th>
-                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanAdditives(it.additives) || '-'}</td>`).join('')}
+            <!-- 用法（チェック時のみ表示） -->
+            ${showUsageMethod ? `
+              <tr class="bg-blue-50/20">
+                <td class="compare-header-cell font-bold text-slate-800">用法</td>
+                ${filtered.map(it => {
+                  const method = extractUsageMethod(it.usage);
+                  return `
+                    <td class="p-2.5 text-[11px] text-slate-700 align-top leading-relaxed max-w-[220px] bg-white">
+                      <div class="max-h-36 overflow-y-auto whitespace-pre-line">${method || '-'}</div>
+                    </td>
+                  `;
+                }).join('')}
               </tr>
             ` : ''}
 
+            <!-- 1日服用量（チェック時のみ表示、純粋分量のみ表示） -->
+            ${showDailyDose ? `
+              <tr class="bg-white">
+                <td class="compare-header-cell font-bold text-slate-700">1日服用量</td>
+                ${filtered.map(it => `
+                  <td class="text-center font-mono text-[11px] bg-white font-medium">${formatDailyDose(it.dailyDose)}</td>
+                `).join('')}
+              </tr>
+            ` : ''}
+            
+            <!-- 構成生薬（エキス量含む、チェック時のみ表示、単位g統一 ＆ 同量マーカー色分け完全対応） -->
+            ${showIngredients ? `
+              <!-- エキス分量 -->
+              <tr class="bg-emerald-50/40">
+                <td class="compare-header-cell font-bold text-emerald-950">エキス量</td>
+                ${filtered.map(it => {
+                  const ext = (it.ingredients || []).find(x => x.isExtract);
+                  const extDisplay = ext ? formatHerbAmount(ext.amount, ext.amountStr) : '-';
+                  return `
+                    <td class="text-center font-mono font-bold text-emerald-900 bg-emerald-50/20">
+                      ${extDisplay}
+                    </td>
+                  `;
+                }).join('')}
+              </tr>
+
+              <!-- 各生薬の分量（単位g統一 ＆ 同量マーカー色分け対応） -->
+              ${sortedHerbs.map(herb => {
+                // この生薬における各商品の配合量数値を抽出
+                const amounts = filtered.map(it => {
+                  const ing = (it.ingredients || []).find(x => cleanHerbName(x.name) === herb);
+                  return (ing && typeof ing.amount === 'number' && ing.amount > 0) ? ing.amount : null;
+                });
+
+                // 数値ごとの登場回数を集計
+                const countMap = {};
+                amounts.forEach(amt => {
+                  if (amt !== null) countMap[amt] = (countMap[amt] || 0) + 1;
+                });
+
+                // 2社以上で一致する数値（同量）のみを抽出し、大きい順にソート
+                const duplicateAmts = Object.keys(countMap)
+                  .filter(amt => countMap[amt] >= 2)
+                  .map(Number)
+                  .sort((a, b) => b - a);
+
+                return `
+                <tr class="hover:bg-slate-50">
+                  <td class="compare-header-cell font-medium text-slate-800">${herb}</td>
+                  ${filtered.map(it => {
+                    const ing = (it.ingredients || []).find(x => cleanHerbName(x.name) === herb);
+                    const herbDisplay = ing ? formatHerbAmount(ing.amount, ing.amountStr) : '-';
+                    const amt = (ing && typeof ing.amount === 'number' && ing.amount > 0) ? ing.amount : null;
+
+                    let markerClass = '';
+                    if (amt !== null) {
+                      const matchIdx = duplicateAmts.indexOf(amt);
+                      if (matchIdx !== -1) {
+                        markerClass = `marker-match-${matchIdx % 5}`;
+                      }
+                    }
+
+                    return `
+                      <td class="text-center font-mono ${markerClass ? markerClass : (ing ? 'font-bold text-slate-800 bg-white' : 'text-slate-300 bg-white')}">
+                        ${herbDisplay}
+                      </td>
+                    `;
+                  }).join('')}
+                </tr>
+                `;
+              }).join('')}
+            ` : ''}
+
+            <!-- 添加物（チェック時のみ表示） -->
+            ${showAdditives ? `
+              <tr class="bg-slate-50/50">
+                <td class="compare-header-cell font-bold text-slate-700">添加物</td>
+                ${filtered.map(it => {
+                  const adds = cleanAdditives(it.additives);
+                  return `
+                    <td class="p-2.5 text-[11px] text-slate-600 align-top leading-relaxed max-w-[220px] bg-white">
+                      <div class="max-h-28 overflow-y-auto">${adds || '記載なし'}</div>
+                    </td>
+                  `;
+                }).join('')}
+              </tr>
+            ` : ''}
+
+            <!-- 使用上の注意（チェック時のみ表示） -->
             ${showPrecautions ? `
-              <tr class="section-row">
-                <th class="sticky-col font-bold text-slate-700 bg-slate-100">使用上の注意</th>
-                ${filtered.map(it => `<td class="text-[11px] leading-relaxed bg-white">${cleanDisplayText(it.precautions) || '-'}</td>`).join('')}
+              <tr class="bg-amber-50/20">
+                <td class="compare-header-cell font-bold text-slate-800">使用上の注意</td>
+                ${filtered.map(it => {
+                  const cleaned = cleanDisplayText(it.precautions);
+                  return `
+                    <td class="p-2.5 text-[11px] text-slate-700 align-top leading-relaxed max-w-[240px] bg-white">
+                      <div class="max-h-48 overflow-y-auto whitespace-pre-line text-slate-600">${cleaned || '-'}</div>
+                    </td>
+                  `;
+                }).join('')}
               </tr>
             ` : ''}
 
@@ -2351,7 +2442,6 @@ function toggleCompareDropdown(prefix) {
   const menu = document.getElementById(prefix + 'DropdownMenu');
   if (menu) {
     const isHidden = menu.classList.contains('hidden');
-    // 他の比較プルダウンを閉じる
     ['compareType', 'compareCompany', 'compareDosage', 'compareSection'].forEach(p => {
       const other = document.getElementById(p + 'DropdownMenu');
       if (other) other.classList.add('hidden');
@@ -2371,7 +2461,6 @@ function onCompareTypeToggle(cb) {
 
 function onCompareCompanyToggle(cb) {
   if (STATE.compareSelectedCompanies.size === 0) {
-    // 全選択状態から特定のチェックが外された場合
     const allCbs = document.querySelectorAll('#compareCompanyDropdownMenu input[type="checkbox"]');
     allCbs.forEach(c => {
       if (c.value !== cb.value) STATE.compareSelectedCompanies.add(c.value);
@@ -2434,8 +2523,8 @@ function resetCompareFilters() {
   renderComparePageContent();
 }
 
-function openDetailPageFromCompare(productName) {
-  const item = STATE.items.find(it => it.name === productName || it.rawName === productName);
+function openDetailPageByIndex(globalIndex) {
+  const item = STATE.items[globalIndex];
   if (item) {
     openDetailPage(item, true);
   }
