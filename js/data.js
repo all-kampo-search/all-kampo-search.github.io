@@ -200937,7 +200937,7 @@ const kampoData = {
   "changes": {
     "added": [],
     "deleted": [],
-    "lastUpdated": "2026-11-14T22:22:21.401Z"
+    "lastUpdated": "2026-11-15T22:48:17.741Z"
   }
 };
 
